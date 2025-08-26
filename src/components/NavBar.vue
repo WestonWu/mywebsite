@@ -8,8 +8,7 @@
             <div class="bar"></div>
             <div class="bar"></div>
         </div>
-        <ul class="nav-links" :class="{ 'active': isMenuOpen }">
-            <li>
+        <ul class="nav-links" :class="{ 'active': isMenuOpen }"><li>
                 <router-link to="/" @click="closeMenu">首页</router-link>
             </li>
             <li>
@@ -22,12 +21,60 @@
                 <router-link to="/contact" @click="closeMenu">联系方式</router-link>
             </li>
         </ul>
+        <!-- 主题切换按钮 -->
+        <button 
+            class="theme-toggle-btn"
+            @click="toggleTheme"
+            aria-label="切换主题模式"
+            :title="isDarkMode ? '切换到浅色模式' : '切换到深色模式'"
+        >
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="20" 
+                height="20" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="2" 
+                stroke-linecap="round" 
+                stroke-linejoin="round"
+                v-if="isDarkMode"
+            >
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="20" 
+                height="20" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="2" 
+                stroke-linecap="round" 
+                stroke-linejoin="round"
+                v-else
+            >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
     </nav>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, inject } from 'vue';
 import { onMounted, onUnmounted } from 'vue';
+
+// 注入主题相关的数据和方法
+const theme = inject('theme');
+const { isDarkMode, toggleTheme } = theme;
 
 const isMenuOpen = ref(false);
 
@@ -120,6 +167,29 @@ onUnmounted(() => {
     display: none;
 }
 
+/* 主题切换按钮样式 */
+.theme-toggle-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    color: var(--text-primary);
+    position: relative;
+    z-index: 100;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--hover-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
 /* 移动端样式 */
 @media (max-width: 768px) {
     .navbar {
@@ -137,6 +207,12 @@ onUnmounted(() => {
         display: block;
         cursor: pointer;
         z-index: 110;
+    }
+
+    .theme-toggle-btn {
+        width: 40px;
+        height: 40px;
+        margin-right: 10px;
     }
 
     .bar {

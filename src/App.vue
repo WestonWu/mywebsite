@@ -22,9 +22,11 @@
 <script setup>
 import NavBar from "./components/NavBar.vue"
 import ParticleBackground from "./components/ParticleBackground.vue"
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, provide } from 'vue';
 
 const showScrollTop = ref(false);
+// 主题模式，默认深色模式
+const isDarkMode = ref(true);
 
 // 处理滚动事件，控制回到顶部按钮的显示/隐藏
 function handleScroll() {
@@ -40,9 +42,28 @@ function scrollToTop() {
     });
 }
 
+// 切换主题模式
+function toggleTheme() {
+    isDarkMode.value = !isDarkMode.value;
+    document.documentElement.classList.toggle('light-mode', !isDarkMode.value);
+    // 保存主题设置到localStorage
+    localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
+}
+
+// 提供主题相关的数据和方法给子组件
+provide('theme', {
+    isDarkMode,
+    toggleTheme
+});
+
 // 监听滚动事件
 onMounted(() => {
     window.addEventListener('scroll', handleScroll);
+    // 从localStorage恢复主题设置
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        toggleTheme();
+    }
 });
 
 // 组件卸载时移除事件监听
@@ -57,7 +78,9 @@ onUnmounted(() => {
     /* 动画持续时间 */
     --animation-duration: 0.5s;
     --animation-timing: cubic-bezier(0.34, 1.56, 0.64, 1);
-    /* 主题色变量 */
+    --transition: all 0.3s ease;
+    --border-radius: 12px;
+    /* 深色模式变量 */
     --primary-bg: #000000;
     --secondary-bg: #1a1a2e;
     --text-primary: rgba(255, 255, 255, 0.95);
@@ -70,8 +93,19 @@ onUnmounted(() => {
     --card-bg: rgba(255, 255, 255, 0.05);
     --shadow-color: rgba(0, 0, 0, 0.3);
     --gradient-primary: linear-gradient(135deg, #3a86ff, #1a6dff);
-    --transition: all 0.3s ease;
-    --border-radius: 12px;
+}
+
+/* 浅色模式变量 */
+.light-mode {
+    --primary-bg: #ffffff;
+    --secondary-bg: #f5f7fa;
+    --text-primary: rgba(0, 0, 0, 0.95);
+    --text-secondary: rgba(0, 0, 0, 0.75);
+    --border-color: rgba(0, 0, 0, 0.1);
+    --hover-bg: rgba(0, 0, 0, 0.05);
+    --active-bg: rgba(0, 0, 0, 0.1);
+    --card-bg: rgba(0, 0, 0, 0.02);
+    --shadow-color: rgba(0, 0, 0, 0.1);
 }
 
 #app {
