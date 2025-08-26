@@ -31,8 +31,8 @@
 
 1. 克隆仓库
 ```bash
-git clone https://github.com/WestonWu/mywebsit.git
-cd mywebsit
+git clone https://github.com/WestonWu/mywebsite.git
+cd mywebsite
 ```
 
 2. 安装依赖
