@@ -1,4 +1,6 @@
 <template>
+    <!-- 使用下雨背景动画效果 -->
+    <RainEffect />
     <!-- 使用优化后的DOMParticle组件 -->
     <DOMParticle />
     <NavBar />
@@ -23,6 +25,7 @@
 <script setup>
 import NavBar from "./components/NavBar.vue"
 import DOMParticle from "./components/DOMParticle.vue"
+import RainEffect from "./components/RainEffect.vue"
 import { ref, onMounted, onUnmounted, provide } from 'vue';
 
 const showScrollTop = ref(false);
