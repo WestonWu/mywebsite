@@ -65,10 +65,10 @@ function createParticleElement(index) {
     size,
     x: x,
     y: y,
-    speedX: (Math.random() - 0.5) * 1.0, // 更平滑的速度
-    speedY: (Math.random() - 0.5) * 1.0,
-    baseSpeedX: (Math.random() - 0.5) * 1.0,
-    baseSpeedY: (Math.random() - 0.5) * 1.0,
+    speedX: (Math.random() - 0.5) * 2.0, // 增加速度范围
+    speedY: (Math.random() - 0.5) * 2.0,
+    baseSpeedX: (Math.random() - 0.5) * 2.0,
+    baseSpeedY: (Math.random() - 0.5) * 2.0,
     color,
     index,
     connections: []
@@ -118,14 +118,20 @@ function animate() {
     particle.x += particle.speedX;
     particle.y += particle.speedY;
     
-    // 边界反弹 - 简单的反弹机制
-    if (particle.x < 0 || particle.x > window.innerWidth) {
-      particle.speedX = -particle.speedX;
-      particle.x = Math.max(0, Math.min(window.innerWidth, particle.x));
+    // 边界反弹 - 确保反弹后保持足够的速度
+    if (particle.x < 0) {
+      particle.speedX = Math.abs(particle.speedX) * 0.95;
+      particle.x = 0;
+    } else if (particle.x > window.innerWidth) {
+      particle.speedX = -Math.abs(particle.speedX) * 0.95;
+      particle.x = window.innerWidth;
     }
-    if (particle.y < 0 || particle.y > window.innerHeight) {
-      particle.speedY = -particle.speedY;
-      particle.y = Math.max(0, Math.min(window.innerHeight, particle.y));
+    if (particle.y < 0) {
+      particle.speedY = Math.abs(particle.speedY) * 0.95;
+      particle.y = 0;
+    } else if (particle.y > window.innerHeight) {
+      particle.speedY = -Math.abs(particle.speedY) * 0.95;
+      particle.y = window.innerHeight;
     }
     
     // 鼠标互动效果 - 粒子避开鼠标
