@@ -118,20 +118,24 @@ function animate() {
     particle.x += particle.speedX;
     particle.y += particle.speedY;
     
-    // 边界反弹 - 确保反弹后保持足够的速度
+    // 边界反弹 - 增加反弹力度并添加边界推力
     if (particle.x < 0) {
-      particle.speedX = Math.abs(particle.speedX) * 0.95;
+      particle.speedX = Math.abs(particle.speedX) * 1.2; // 增加反弹力度
       particle.x = 0;
+      particle.speedX += 0.5; // 添加边界推力
     } else if (particle.x > window.innerWidth) {
-      particle.speedX = -Math.abs(particle.speedX) * 0.95;
+      particle.speedX = -Math.abs(particle.speedX) * 1.2;
       particle.x = window.innerWidth;
+      particle.speedX -= 0.5;
     }
     if (particle.y < 0) {
-      particle.speedY = Math.abs(particle.speedY) * 0.95;
+      particle.speedY = Math.abs(particle.speedY) * 1.2;
       particle.y = 0;
+      particle.speedY += 0.5;
     } else if (particle.y > window.innerHeight) {
-      particle.speedY = -Math.abs(particle.speedY) * 0.95;
+      particle.speedY = -Math.abs(particle.speedY) * 1.2;
       particle.y = window.innerHeight;
+      particle.speedY -= 0.5;
     }
     
     // 鼠标互动效果 - 粒子避开鼠标
