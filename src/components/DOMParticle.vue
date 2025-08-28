@@ -118,39 +118,14 @@ function animate() {
     particle.x += particle.speedX;
     particle.y += particle.speedY;
     
-    // 添加向中心移动的引力效果
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    const centerDx = centerX - particle.x;
-    const centerDy = centerY - particle.y;
-    const centerDistance = Math.sqrt(centerDx * centerDx + centerDy * centerDy);
-    
-    // 距离中心越远，引力越强
-    if (centerDistance > 50) {
-      const centerForce = 0.001 * centerDistance;
-      particle.speedX += centerDx / centerDistance * centerForce;
-      particle.speedY += centerDy / centerDistance * centerForce;
+    // 边界反弹 - 简单的反弹机制
+    if (particle.x < 0 || particle.x > window.innerWidth) {
+      particle.speedX = -particle.speedX;
+      particle.x = Math.max(0, Math.min(window.innerWidth, particle.x));
     }
-    
-    // 边界反弹 - 添加更智能的边界处理
-    if (particle.x < 0) {
-      particle.speedX = Math.abs(particle.speedX) * 0.9;
-      particle.x = 0;
-      // 边界处给予向中心的推力
-      particle.speedX += 0.2;
-    } else if (particle.x > window.innerWidth) {
-      particle.speedX = -Math.abs(particle.speedX) * 0.9;
-      particle.x = window.innerWidth;
-      particle.speedX -= 0.2;
-    }
-    if (particle.y < 0) {
-      particle.speedY = Math.abs(particle.speedY) * 0.9;
-      particle.y = 0;
-      particle.speedY += 0.2;
-    } else if (particle.y > window.innerHeight) {
-      particle.speedY = -Math.abs(particle.speedY) * 0.9;
-      particle.y = window.innerHeight;
-      particle.speedY -= 0.2;
+    if (particle.y < 0 || particle.y > window.innerHeight) {
+      particle.speedY = -particle.speedY;
+      particle.y = Math.max(0, Math.min(window.innerHeight, particle.y));
     }
     
     // 鼠标互动效果 - 粒子避开鼠标
