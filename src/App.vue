@@ -1,5 +1,6 @@
 <template>
-    <ParticleBackground />
+    <!-- 使用优化后的DOMParticle组件 -->
+    <DOMParticle />
     <NavBar />
     <!-- 页面过渡动画 -->
     <transition name="page-transition">
@@ -21,7 +22,7 @@
 
 <script setup>
 import NavBar from "./components/NavBar.vue"
-import ParticleBackground from "./components/ParticleBackground.vue"
+import DOMParticle from "./components/DOMParticle.vue"
 import { ref, onMounted, onUnmounted, provide } from 'vue';
 
 const showScrollTop = ref(false);
@@ -64,6 +65,10 @@ onMounted(() => {
     if (savedTheme === 'light') {
         toggleTheme();
     }
+    
+    // 添加调试信息
+    console.log('App已挂载');
+    console.log('当前主题模式:', isDarkMode.value ? '深色模式' : '浅色模式');
 });
 
 // 组件卸载时移除事件监听
