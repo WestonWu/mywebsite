@@ -231,6 +231,7 @@ function drawConnections(particle) {
       background: `linear-gradient(to right, ${particle.color}, ${otherParticle.color})`,
       height: '1px',
       left: `${particle.x + particle.size / 2}px`,
+
       top: `${particle.y + particle.size / 2}px`,
       width: `${distance}px`,
       transformOrigin: '0 50%',
@@ -316,6 +317,6 @@ onUnmounted(() => {
 
 .dom-particle {
   border-radius: 50%; /* 确保粒子是圆形的 */
-  // 简化模糊效果以提升性能
+  /* 简化模糊效果以提升性能 */
 }
 </style>
