@@ -20,7 +20,7 @@ function createParticles() {
   container.value.innerHTML = '';
   particles = [];
   
-  const count = 100; // 增加粒子数量到100个
+  const count = 100; // 保持粒子数量为100个，但优化其他性能
   
   for (let i = 0; i < count; i++) {
     const particle = createParticleElement(i);
@@ -52,11 +52,14 @@ function createParticleElement(index) {
     backgroundColor: color,
     left: `${x}px`,
     top: `${y}px`,
-    boxShadow: `0 0 ${size * 1.5}px ${color}`,
+    // 简化阴影效果
+    boxShadow: `0 0 ${size}px ${color}`,
     opacity: 0.8 + Math.random() * 0.2, // 更高的透明度
     borderRadius: '50%', // 确保圆形
     position: 'absolute',
-    transition: 'transform 0.2s ease-out, opacity 0.3s ease'
+    // 使用transform提升性能
+    transform: `translate(0, 0)`,
+    willChange: 'transform, opacity' // 提示浏览器该元素将要改变
   });
   
   // 返回粒子对象，包含元素和动画属性
@@ -161,14 +164,11 @@ function animate() {
     if (Math.floor(Date.now() / 5000) % 2 === 0) { // 每5秒变换一次颜色
       particle.color = getRandomColor();
       particle.element.style.backgroundColor = particle.color;
-      particle.element.style.boxShadow = `0 0 ${particle.size * 1.5}px ${particle.color}`;
+      particle.element.style.boxShadow = `0 0 ${particle.size}px ${particle.color}`;
     }
     
-    // 应用位置更新
-    Object.assign(particle.element.style, {
-      left: `${particle.x}px`,
-      top: `${particle.y}px`
-    });
+    // 使用transform应用位置更新，提升性能
+    particle.element.style.transform = `translate(${particle.x}px, ${particle.y}px)`;
     
     // 绘制粒子之间的连接线
     drawConnections(particle);
@@ -188,6 +188,10 @@ function drawConnections(particle) {
   });
   particle.connections = [];
   
+  // 限制连接线的数量，只连接最近的几个粒子
+  const maxConnections = 3;
+  let connections = [];
+  
   particles.forEach(otherParticle => {
     if (particle === otherParticle) return;
     
@@ -197,29 +201,48 @@ function drawConnections(particle) {
     
     const maxConnectionDistance = 100; // 最大连接距离
     if (distance < maxConnectionDistance) {
-      // 根据距离计算透明度
-      const opacity = (maxConnectionDistance - distance) / maxConnectionDistance * 0.6;
-      
-      // 创建连接线条
-      const line = document.createElement('div');
-      Object.assign(line.style, {
-        position: 'absolute',
-        background: `linear-gradient(to right, ${particle.color}, ${otherParticle.color})`,
-        height: '1px',
-        left: `${particle.x + particle.size / 2}px`,
-        top: `${particle.y + particle.size / 2}px`,
-        width: `${distance}px`,
-        transformOrigin: '0 50%',
-        transform: `rotate(${Math.atan2(dy, dx) * 180 / Math.PI}deg)`,
-        pointerEvents: 'none',
-        opacity: opacity,
-        zIndex: '0',
-        transition: 'opacity 0.2s ease'
+      connections.push({
+        particle: otherParticle,
+        distance: distance,
+        dx: dx,
+        dy: dy
       });
-      
-      container.value.appendChild(line);
-      particle.connections.push(line);
     }
+  });
+  
+  // 按距离排序并只保留最近的几个连接
+  connections.sort((a, b) => a.distance - b.distance);
+  connections = connections.slice(0, maxConnections);
+  
+  // 绘制连接线
+  connections.forEach(conn => {
+    const otherParticle = conn.particle;
+    const dx = conn.dx;
+    const dy = conn.dy;
+    const distance = conn.distance;
+    
+    // 根据距离计算透明度
+    const opacity = (100 - distance) / 100 * 0.6;
+    
+    // 创建连接线条
+    const line = document.createElement('div');
+    Object.assign(line.style, {
+      position: 'absolute',
+      background: `linear-gradient(to right, ${particle.color}, ${otherParticle.color})`,
+      height: '1px',
+      left: `${particle.x + particle.size / 2}px`,
+      top: `${particle.y + particle.size / 2}px`,
+      width: `${distance}px`,
+      transformOrigin: '0 50%',
+      transform: `rotate(${Math.atan2(dy, dx) * 180 / Math.PI}deg)`,
+      pointerEvents: 'none',
+      opacity: opacity,
+      zIndex: '0',
+      willChange: 'opacity' // 提示浏览器该元素将要改变
+    });
+    
+    container.value.appendChild(line);
+    particle.connections.push(line);
   });
 }
 
@@ -235,7 +258,7 @@ function handleThemeChange() {
   particles.forEach(particle => {
     particle.color = getRandomColor();
     particle.element.style.backgroundColor = particle.color;
-    particle.element.style.boxShadow = `0 0 ${particle.size * 1.5}px ${particle.color}`;
+    particle.element.style.boxShadow = `0 0 ${particle.size}px ${particle.color}`;
   });
 }
 
@@ -293,6 +316,6 @@ onUnmounted(() => {
 
 .dom-particle {
   border-radius: 50%; /* 确保粒子是圆形的 */
-  filter: blur(0.8px); /* 更柔和的模糊效果 */
+  // 简化模糊效果以提升性能
 }
 </style>
