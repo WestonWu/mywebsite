@@ -115,6 +115,7 @@ function createSplash(x, y) {
       // 随机速度方向，主要向上和向外
       speedX: (-2 + Math.random() * 4) * 1.5,
       speedY: (-3 - Math.random() * 4), // 主要向上
+      gravity: 0.1 + Math.random() * 0.2, // 重力影响
       opacity: 0.7,
       life: 1.0 // 生命周期
     };
@@ -162,7 +163,8 @@ function animate() {
   for (let i = splashes.length - 1; i >= 0; i--) {
     const splash = splashes[i];
     
-    // 更新位置
+    // 更新位置，添加重力影响
+    splash.speedY += splash.gravity; // 应用重力
     splash.x += splash.speedX;
     splash.y += splash.speedY;
     
@@ -177,8 +179,8 @@ function animate() {
       opacity: splash.opacity
     });
     
-    // 如果生命周期结束，移除粒子
-    if (splash.life <= 0) {
+    // 如果生命周期结束或水花落回地面，移除粒子
+    if (splash.life <= 0 || splash.y > window.innerHeight) {
       splash.element.remove();
       splashes.splice(i, 1);
     }
