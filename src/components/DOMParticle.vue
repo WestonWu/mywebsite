@@ -118,14 +118,20 @@ function animate() {
     particle.x += particle.speedX;
     particle.y += particle.speedY;
     
-    // 边界反弹
-    if (particle.x < 0 || particle.x > window.innerWidth) {
-      particle.speedX = -particle.speedX;
-      particle.x = Math.max(0, Math.min(window.innerWidth, particle.x));
+    // 边界反弹 - 添加更智能的边界处理
+    if (particle.x < 0) {
+      particle.speedX = Math.abs(particle.speedX) * 0.8;
+      particle.x = 0;
+    } else if (particle.x > window.innerWidth) {
+      particle.speedX = -Math.abs(particle.speedX) * 0.8;
+      particle.x = window.innerWidth;
     }
-    if (particle.y < 0 || particle.y > window.innerHeight) {
-      particle.speedY = -particle.speedY;
-      particle.y = Math.max(0, Math.min(window.innerHeight, particle.y));
+    if (particle.y < 0) {
+      particle.speedY = Math.abs(particle.speedY) * 0.8;
+      particle.y = 0;
+    } else if (particle.y > window.innerHeight) {
+      particle.speedY = -Math.abs(particle.speedY) * 0.8;
+      particle.y = window.innerHeight;
     }
     
     // 鼠标互动效果 - 粒子避开鼠标
@@ -176,14 +182,14 @@ function drawConnections(particle) {
   particles.forEach(otherParticle => {
     if (particle === otherParticle) return;
     
-    const dx = particle.x - otherParticle.x;
-    const dy = particle.y - otherParticle.y;
+    const dx = otherParticle.x - particle.x;
+    const dy = otherParticle.y - particle.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
     const maxConnectionDistance = 100; // 最大连接距离
     if (distance < maxConnectionDistance) {
       // 根据距离计算透明度
-      const opacity = (maxConnectionDistance - distance) / maxConnectionDistance * 0.4;
+      const opacity = (maxConnectionDistance - distance) / maxConnectionDistance * 0.6;
       
       // 创建连接线条
       const line = document.createElement('div');
@@ -198,7 +204,8 @@ function drawConnections(particle) {
         transform: `rotate(${Math.atan2(dy, dx) * 180 / Math.PI}deg)`,
         pointerEvents: 'none',
         opacity: opacity,
-        zIndex: '0'
+        zIndex: '0',
+        transition: 'opacity 0.2s ease'
       });
       
       container.value.appendChild(line);
