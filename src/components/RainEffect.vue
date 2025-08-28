@@ -73,7 +73,9 @@ function createRaindropElement() {
     wind: -2 + Math.random() * 4, // 水平风力影响-2到2px/帧
     opacity: opacity,
     sway: Math.random() * 0.5, // 摆动幅度
-    swayPhase: Math.random() * Math.PI * 2 // 摆动相位
+    swayPhase: Math.random() * Math.PI * 2, // 摆动相位
+    rotation: Math.random() * 360, // 初始旋转角度
+    rotationSpeed: -2 + Math.random() * 4 // 旋转速度-2到2度/帧
   };
 }
 
@@ -107,7 +109,7 @@ function createSplash(x, y) {
       position: 'absolute',
       borderRadius: '50%',
       pointerEvents: 'none',
-      opacity: '0.7',
+      opacity: 0.7, // 修复：使用数值而不是字符串
       transform: `translate(0, 0)`, // 使用transform提升性能
       willChange: 'transform, opacity' // 提示浏览器该元素将要改变
     });
@@ -125,7 +127,7 @@ function createSplash(x, y) {
       speedY: (-2 - Math.random() * 2), // 增加初始向上速度
       gravity: 0.1 + Math.random() * 0.2, // 减小重力影响，使水花飘散更慢
       opacity: 0.8, // 增加初始透明度
-      life: 1.2 // 增加生命周期
+      life: 1.5 // 增加生命周期至1.5
     };
     
     splashes.push(splashParticle);
@@ -142,6 +144,9 @@ function animate() {
     // 更新位置
     raindrop.y += raindrop.speed;
     raindrop.x += raindrop.wind + Math.sin(raindrop.swayPhase) * raindrop.sway; // 添加摆动效果
+    
+    // 更新旋转角度
+    raindrop.rotation += raindrop.rotationSpeed;
     
     // 如果雨滴落到屏幕底部，创建水花并重置位置
     // 调整落地检测条件，增加一个小的缓冲区
@@ -162,8 +167,8 @@ function animate() {
       raindrop.x = -raindrop.width;
     }
     
-    // 使用transform应用位置更新，提升性能
-    raindrop.element.style.transform = `translate(${raindrop.x}px, ${raindrop.y}px)`;
+    // 使用transform应用位置和旋转更新，提升性能
+    raindrop.element.style.transform = `translate(${raindrop.x}px, ${raindrop.y}px) rotate(${raindrop.rotation}deg)`;
   });
   
   // 更新水花粒子
@@ -176,7 +181,7 @@ function animate() {
     splash.y += splash.speedY;
     
     // 更新生命周期
-    splash.life -= 0.015; // 减慢生命周期消耗速度
+    splash.life -= 0.01; // 进一步减慢生命周期消耗速度
     splash.opacity = splash.life * 0.8; // 调整透明度计算
     
     // 使用transform应用更新，提升性能
