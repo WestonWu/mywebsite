@@ -1,13 +1,32 @@
 <template>
-    <!-- 使用下雨背景动画效果 -->
-    <RainEffect />
-    <!-- 使用优化后的DOMParticle组件 -->
-    <DOMParticle />
-    <NavBar />
-    <!-- 页面过渡动画 -->
-    <transition name="page-transition">
-        <router-view />
-    </transition>
+  <div id="app">
+    <!-- 条件渲染粒子效果和雨滴效果 -->
+    <DOMParticle v-if="showParticles" />
+    <RainEffect v-if="showRain" />
+    
+    <Navbar />
+    <main>
+      <router-view />
+    </main>
+    
+    <!-- 添加切换按钮 -->
+    <div class="effect-toggle">
+      <button 
+        @click="toggleEffect('particles')" 
+        :class="{ active: showParticles }"
+        class="effect-btn"
+      >
+        粒子效果
+      </button>
+      <button 
+        @click="toggleEffect('rain')" 
+        :class="{ active: showRain }"
+        class="effect-btn"
+      >
+        雨滴效果
+      </button>
+    </div>
+    
     <!-- 回到顶部按钮 -->
     <button 
         class="scroll-top-btn" 
@@ -20,64 +39,87 @@
             <path d="m18 15-6-6-6 6"/>
         </svg>
     </button>
+  </div>
 </template>
 
-<script setup>
-import NavBar from "./components/NavBar.vue"
-import DOMParticle from "./components/DOMParticle.vue"
-import RainEffect from "./components/RainEffect.vue"
-import { ref, onMounted, onUnmounted, provide } from 'vue';
+<script>
+import DOMParticle from './components/DOMParticle.vue'
+import RainEffect from './components/RainEffect.vue'
+import Navbar from './components/Navbar.vue'
+import { ref, provide } from 'vue';
 
-const showScrollTop = ref(false);
-// 主题模式，默认深色模式
-const isDarkMode = ref(true);
-
-// 处理滚动事件，控制回到顶部按钮的显示/隐藏
-function handleScroll() {
-    // 当页面向下滚动超过300px时显示按钮
-    showScrollTop.value = window.scrollY > 300;
-}
-
-// 平滑滚动到页面顶部
-function scrollToTop() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
+export default {
+  name: 'App',
+  components: {
+    DOMParticle,
+    RainEffect,
+    Navbar
+  },
+  data() {
+    return {
+      showParticles: true,  // 默认显示粒子效果
+      showRain: false,
+      showScrollTop: false
+    }
+  },
+  setup() {
+    // 主题模式，默认深色模式
+    const isDarkMode = ref(true);
+    
+    // 切换主题模式
+    function toggleTheme() {
+      isDarkMode.value = !isDarkMode.value;
+      document.documentElement.classList.toggle('light-mode', !isDarkMode.value);
+      // 保存主题设置到localStorage
+      localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
+    }
+    
+    // 提供主题相关的数据和方法给子组件
+    provide('theme', {
+      isDarkMode,
+      toggleTheme
     });
-}
-
-// 切换主题模式
-function toggleTheme() {
-    isDarkMode.value = !isDarkMode.value;
-    document.documentElement.classList.toggle('light-mode', !isDarkMode.value);
-    // 保存主题设置到localStorage
-    localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
-}
-
-// 提供主题相关的数据和方法给子组件
-provide('theme', {
-    isDarkMode,
-    toggleTheme
-});
-
-// 监听滚动事件
-onMounted(() => {
-    window.addEventListener('scroll', handleScroll);
+    
+    return {
+      isDarkMode,
+      toggleTheme
+    }
+  },
+  methods: {
+    toggleEffect(effectType) {
+      if (effectType === 'particles') {
+        this.showParticles = true;
+        this.showRain = false;
+      } else if (effectType === 'rain') {
+        this.showParticles = false;
+        this.showRain = true;
+      }
+    },
+    // 处理滚动事件，控制回到顶部按钮的显示/隐藏
+    handleScroll() {
+        // 当页面向下滚动超过300px时显示按钮
+        this.showScrollTop = window.scrollY > 300;
+    },
+    // 平滑滚动到页面顶部
+    scrollToTop() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+  },
+  mounted() {
+    window.addEventListener('scroll', this.handleScroll);
     // 从localStorage恢复主题设置
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light') {
-        toggleTheme();
+      this.toggleTheme();
     }
-    
-    // 添加调试信息
-    console.log('App已挂载');
-    console.log('当前主题模式:', isDarkMode.value ? '深色模式' : '浅色模式');
-});
-
-// 组件卸载时移除事件监听
-onUnmounted(() => {
-    window.removeEventListener('scroll', handleScroll);
-});
+  },
+  beforeUnmount() {
+    window.removeEventListener('scroll', this.handleScroll);
+  }
+}
 </script>
 
 <style>
@@ -262,9 +304,52 @@ select {
     box-shadow: 0 6px 16px var(--shadow-color);
 }
 
+/* 添加切换按钮样式 */
+.effect-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  gap: 10px;
+}
+
+.effect-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.effect-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.effect-btn.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
-    .scroll-top-btn {
+  .effect-toggle {
+    bottom: 70px;
+  }
+  
+  .effect-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .scroll-top-btn {
         bottom: 1.5rem;
         right: 1.5rem;
         width: 45px;
