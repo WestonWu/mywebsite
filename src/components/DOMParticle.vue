@@ -20,7 +20,7 @@ function createParticles() {
   container.value.innerHTML = '';
   particles = [];
   
-  const count = 50; // 增加粒子数量到50个
+  const count = 100; // 增加粒子数量到100个
   
   for (let i = 0; i < count; i++) {
     const particle = createParticleElement(i);
@@ -65,10 +65,10 @@ function createParticleElement(index) {
     size,
     x: x,
     y: y,
-    speedX: (Math.random() - 0.5) * 2.0, // 增加速度范围
-    speedY: (Math.random() - 0.5) * 2.0,
-    baseSpeedX: (Math.random() - 0.5) * 2.0,
-    baseSpeedY: (Math.random() - 0.5) * 2.0,
+    speedX: (Math.random() - 0.5) * 3.0, // 减慢速度范围到±3.0
+    speedY: (Math.random() - 0.5) * 3.0,
+    baseSpeedX: (Math.random() - 0.5) * 3.0,
+    baseSpeedY: (Math.random() - 0.5) * 3.0,
     color,
     index,
     connections: []
@@ -118,45 +118,50 @@ function animate() {
     particle.x += particle.speedX;
     particle.y += particle.speedY;
     
-    // 边界反弹 - 增加反弹力度并添加边界推力
+    // 边界反弹 - 重新设计反弹机制，确保速度稳定
+    const maxSpeed = 8.0;
+    const minSpeed = 1.0;
+    const bufferDistance = 3;
+    
+    // X轴边界处理
     if (particle.x < 0) {
-      particle.speedX = Math.abs(particle.speedX) * 1.2; // 增加反弹力度
-      particle.x = 0;
-      particle.speedX += 0.5; // 添加边界推力
+      particle.x = bufferDistance;
+      // 确保反弹速度在合理范围内
+      const newSpeedX = minSpeed + Math.random() * 3.0;
+      particle.speedX = newSpeedX;
     } else if (particle.x > window.innerWidth) {
-      particle.speedX = -Math.abs(particle.speedX) * 1.2;
-      particle.x = window.innerWidth;
-      particle.speedX -= 0.5;
+      particle.x = window.innerWidth - bufferDistance;
+      // 确保反弹速度在合理范围内
+      const newSpeedX = -(minSpeed + Math.random() * 3.0);
+      particle.speedX = newSpeedX;
     }
+    
+    // Y轴边界处理
     if (particle.y < 0) {
-      particle.speedY = Math.abs(particle.speedY) * 1.2;
-      particle.y = 0;
-      particle.speedY += 0.5;
+      particle.y = bufferDistance;
+      // 确保反弹速度在合理范围内
+      const newSpeedY = minSpeed + Math.random() * 3.0;
+      particle.speedY = newSpeedY;
     } else if (particle.y > window.innerHeight) {
-      particle.speedY = -Math.abs(particle.speedY) * 1.2;
-      particle.y = window.innerHeight;
-      particle.speedY -= 0.5;
+      particle.y = window.innerHeight - bufferDistance;
+      // 确保反弹速度在合理范围内
+      const newSpeedY = -(minSpeed + Math.random() * 3.0);
+      particle.speedY = newSpeedY;
     }
     
-    // 鼠标互动效果 - 粒子避开鼠标
-    const dx = particle.x - mousePosition.x;
-    const dy = particle.y - mousePosition.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // 限制粒子最大速度，防止速度过快
+    if (Math.abs(particle.speedX) > maxSpeed) {
+      particle.speedX = particle.speedX > 0 ? maxSpeed : -maxSpeed;
+    }
+    if (Math.abs(particle.speedY) > maxSpeed) {
+      particle.speedY = particle.speedY > 0 ? maxSpeed : -maxSpeed;
+    }
     
-    const avoidRadius = 120; // 避开范围
-    if (distance < avoidRadius) {
-      // 计算避开方向
-      const force = (avoidRadius - distance) / avoidRadius * 1.5;
-      particle.speedX = particle.baseSpeedX + (dx / distance) * force;
-      particle.speedY = particle.baseSpeedY + (dy / distance) * force;
-      
-      // 鼠标靠近时粒子变大
-      particle.element.style.transform = `scale(${1 + (avoidRadius - distance) / avoidRadius * 0.5})`;
-    } else {
-      // 恢复基础速度和大小
-      particle.speedX += (particle.baseSpeedX - particle.speedX) * 0.05;
-      particle.speedY += (particle.baseSpeedY - particle.speedY) * 0.05;
-      particle.element.style.transform = 'scale(1)';
+    // 每隔一段时间随机变换粒子颜色
+    if (Math.floor(Date.now() / 5000) % 2 === 0) { // 每5秒变换一次颜色
+      particle.color = getRandomColor();
+      particle.element.style.backgroundColor = particle.color;
+      particle.element.style.boxShadow = `0 0 ${particle.size * 1.5}px ${particle.color}`;
     }
     
     // 应用位置更新
