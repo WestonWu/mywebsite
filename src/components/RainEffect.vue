@@ -121,11 +121,11 @@ function createSplash(x, y) {
       y: y,
       size: size,
       // 随机速度方向，主要向上和向外
-      speedX: (-1 + Math.random() * 2) * 1.5,
-      speedY: (-1 - Math.random() * 1), // 保持初始向上速度
-      gravity: 0.2 + Math.random() * 0.3, // 保持重力影响
-      opacity: 0.7,
-      life: 1.0 // 生命周期
+      speedX: (-1 + Math.random() * 2) * 2, // 增加水平速度范围
+      speedY: (-2 - Math.random() * 2), // 增加初始向上速度
+      gravity: 0.1 + Math.random() * 0.2, // 减小重力影响，使水花飘散更慢
+      opacity: 0.8, // 增加初始透明度
+      life: 1.2 // 增加生命周期
     };
     
     splashes.push(splashParticle);
@@ -144,9 +144,10 @@ function animate() {
     raindrop.x += raindrop.wind + Math.sin(raindrop.swayPhase) * raindrop.sway; // 添加摆动效果
     
     // 如果雨滴落到屏幕底部，创建水花并重置位置
-    if (raindrop.y > window.innerHeight - raindrop.height) {
-      // 创建水花溅起效果
-      createSplash(raindrop.x, window.innerHeight);
+    // 调整落地检测条件，增加一个小的缓冲区
+    if (raindrop.y > window.innerHeight - raindrop.height - 5) {
+      // 创建水花溅起效果，使用雨滴底部中心位置
+      createSplash(raindrop.x + raindrop.width/2, window.innerHeight);
       
       // 重置雨滴位置到顶部
       raindrop.y = -raindrop.height - Math.random() * 100;
@@ -175,8 +176,8 @@ function animate() {
     splash.y += splash.speedY;
     
     // 更新生命周期
-    splash.life -= 0.02;
-    splash.opacity = splash.life * 0.7;
+    splash.life -= 0.015; // 减慢生命周期消耗速度
+    splash.opacity = splash.life * 0.8; // 调整透明度计算
     
     // 使用transform应用更新，提升性能
     splash.element.style.transform = `translate(${splash.x}px, ${splash.y}px)`;
