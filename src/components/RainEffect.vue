@@ -36,10 +36,10 @@ function createRaindropElement() {
   // 设置样式类
   element.classList.add('raindrop');
   
-  // 随机位置、大小和透明度
+  // 随机大小和透明度
   const width = 1 + Math.random() * 2; // 宽度1-3px
-  const height = 10 + Math.random() * 20; // 高度10-30px
-  const opacity = 0.3 + Math.random() * 0.7; // 透明度0.3-1.0
+  const height = 15 + Math.random() * 25; // 高度15-40px
+  const opacity = 0.4 + Math.random() * 0.6; // 透明度0.4-1.0
   
   // 计算初始位置
   const x = Math.random() * window.innerWidth;
@@ -49,13 +49,15 @@ function createRaindropElement() {
   Object.assign(element.style, {
     width: `${width}px`,
     height: `${height}px`,
-    backgroundColor: 'rgba(173, 216, 230, 0.8)', // 浅蓝色
+    background: 'linear-gradient(to bottom, rgba(173, 216, 230, 0.1), rgba(173, 216, 230, 0.9))', // 渐变色雨滴
     left: `${x}px`,
     top: `${y}px`,
     opacity: opacity,
     position: 'absolute',
-    borderRadius: '0 0 50% 50%', // 下圆角，形成雨滴形状
-    pointerEvents: 'none' // 不影响鼠标事件
+    borderRadius: '50% 50% 60% 40%', // 不规则圆形，更自然
+    pointerEvents: 'none', // 不影响鼠标事件
+    filter: 'blur(0.5px)', // 轻微模糊效果
+    boxShadow: `0 0 ${width}px rgba(173, 216, 230, 0.5)` // 发光效果
   });
   
   // 返回雨滴对象，包含元素和动画属性
@@ -65,23 +67,29 @@ function createRaindropElement() {
     y: y,
     width: width,
     height: height,
-    speed: 3 + Math.random() * 7, // 下落速度3-10px/帧
-    wind: -1 + Math.random() * 2, // 水平风力影响-1到1px/帧
-    opacity: opacity
+    speed: 5 + Math.random() * 10, // 下落速度5-15px/帧
+    wind: -2 + Math.random() * 4, // 水平风力影响-2到2px/帧
+    opacity: opacity,
+    sway: Math.random() * 0.5, // 摆动幅度
+    swayPhase: Math.random() * Math.PI * 2 // 摆动相位
   };
 }
 
 // 动画循环
 function animate() {
   raindrops.forEach(raindrop => {
+    // 更新摆动相位
+    raindrop.swayPhase += 0.05;
+    
     // 更新位置
     raindrop.y += raindrop.speed;
-    raindrop.x += raindrop.wind;
+    raindrop.x += raindrop.wind + Math.sin(raindrop.swayPhase) * raindrop.sway; // 添加摆动效果
     
     // 如果雨滴落到屏幕底部以下，重新从顶部开始
     if (raindrop.y > window.innerHeight) {
       raindrop.y = -raindrop.height - Math.random() * 100;
       raindrop.x = Math.random() * window.innerWidth;
+      raindrop.swayPhase = Math.random() * Math.PI * 2; // 重置摆动相位
     }
     
     // 如果雨滴移出水平边界，调整位置
@@ -120,7 +128,7 @@ onMounted(() => {
   // 添加事件监听
   window.addEventListener('resize', handleResize);
   
-  console.log('RainEffect组件已挂载 - 下雨动画效果已启用');
+  console.log('RainEffect组件已挂载 - 美化后的下雨动画效果已启用');
 });
 
 onUnmounted(() => {
@@ -140,7 +148,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 1;
+  z-index: 5; /* 提高层级，确保在粒子效果之上 */
   overflow: hidden;
 }
 </style>
