@@ -113,9 +113,9 @@ function createSplash(x, y) {
       y: y,
       size: size,
       // 随机速度方向，主要向上和向外
-      speedX: (-2 + Math.random() * 4) * 1.5,
-      speedY: (-3 - Math.random() * 4), // 主要向上
-      gravity: 0.1 + Math.random() * 0.2, // 重力影响
+      speedX: (-1 + Math.random() * 2) * 1.5,
+      speedY: (-1 - Math.random() * 1), // 降低初始向上速度
+      gravity: 0.2 + Math.random() * 0.3, // 增加重力影响
       opacity: 0.7,
       life: 1.0 // 生命周期
     };
