@@ -79,7 +79,7 @@ function createRaindropElement() {
 // 创建水花溅起效果
 function createSplash(x, y) {
   // 创建多个水花粒子
-  const splashCount = 5 + Math.floor(Math.random() * 8); // 5-12个粒子
+  const splashCount = 8 + Math.floor(Math.random() * 10); // 8-18个粒子
   
   for (let i = 0; i < splashCount; i++) {
     // 创建水花粒子元素
@@ -89,7 +89,7 @@ function createSplash(x, y) {
     splashElement.classList.add('splash-particle');
     
     // 随机大小
-    const size = 1 + Math.random() * 3; // 1-4px
+    const size = 2 + Math.random() * 5; // 2-7px
     
     // 设置初始样式
     Object.assign(splashElement.style, {
