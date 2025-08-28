@@ -231,7 +231,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 5; /* 提高层级，确保在粒子效果之上 */
+  z-index: 10; /* 提高层级，确保在粒子效果之上 */
   overflow: hidden;
 }
 </style>
