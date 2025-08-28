@@ -9,6 +9,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 
 const rainContainer = ref(null);
 let raindrops = [];
+let splashes = [];
 let animationId = null;
 
 // 创建雨滴元素
@@ -75,8 +76,56 @@ function createRaindropElement() {
   };
 }
 
+// 创建水花溅起效果
+function createSplash(x, y) {
+  // 创建多个水花粒子
+  const splashCount = 5 + Math.floor(Math.random() * 8); // 5-12个粒子
+  
+  for (let i = 0; i < splashCount; i++) {
+    // 创建水花粒子元素
+    const splashElement = document.createElement('div');
+    
+    // 设置样式类
+    splashElement.classList.add('splash-particle');
+    
+    // 随机大小
+    const size = 1 + Math.random() * 3; // 1-4px
+    
+    // 设置初始样式
+    Object.assign(splashElement.style, {
+      width: `${size}px`,
+      height: `${size}px`,
+      backgroundColor: 'rgba(173, 216, 230, 0.7)',
+      left: `${x}px`,
+      top: `${y}px`,
+      position: 'absolute',
+      borderRadius: '50%',
+      pointerEvents: 'none',
+      opacity: '0.7'
+    });
+    
+    rainContainer.value.appendChild(splashElement);
+    
+    // 创建水花粒子对象
+    const splashParticle = {
+      element: splashElement,
+      x: x,
+      y: y,
+      size: size,
+      // 随机速度方向，主要向上和向外
+      speedX: (-2 + Math.random() * 4) * 1.5,
+      speedY: (-3 - Math.random() * 4), // 主要向上
+      opacity: 0.7,
+      life: 1.0 // 生命周期
+    };
+    
+    splashes.push(splashParticle);
+  }
+}
+
 // 动画循环
 function animate() {
+  // 更新雨滴
   raindrops.forEach(raindrop => {
     // 更新摆动相位
     raindrop.swayPhase += 0.05;
@@ -87,6 +136,9 @@ function animate() {
     
     // 如果雨滴落到屏幕底部以下，重新从顶部开始
     if (raindrop.y > window.innerHeight) {
+      // 创建水花溅起效果
+      createSplash(raindrop.x, window.innerHeight);
+      
       raindrop.y = -raindrop.height - Math.random() * 100;
       raindrop.x = Math.random() * window.innerWidth;
       raindrop.swayPhase = Math.random() * Math.PI * 2; // 重置摆动相位
@@ -105,6 +157,32 @@ function animate() {
       top: `${raindrop.y}px`
     });
   });
+  
+  // 更新水花粒子
+  for (let i = splashes.length - 1; i >= 0; i--) {
+    const splash = splashes[i];
+    
+    // 更新位置
+    splash.x += splash.speedX;
+    splash.y += splash.speedY;
+    
+    // 更新生命周期
+    splash.life -= 0.02;
+    splash.opacity = splash.life * 0.7;
+    
+    // 应用更新
+    Object.assign(splash.element.style, {
+      left: `${splash.x}px`,
+      top: `${splash.y}px`,
+      opacity: splash.opacity
+    });
+    
+    // 如果生命周期结束，移除粒子
+    if (splash.life <= 0) {
+      splash.element.remove();
+      splashes.splice(i, 1);
+    }
+  }
   
   // 请求下一帧
   animationId = requestAnimationFrame(animate);
@@ -128,7 +206,7 @@ onMounted(() => {
   // 添加事件监听
   window.addEventListener('resize', handleResize);
   
-  console.log('RainEffect组件已挂载 - 美化后的下雨动画效果已启用');
+  console.log('RainEffect组件已挂载 - 带水花溅起效果的下雨动画已启用');
 });
 
 onUnmounted(() => {
