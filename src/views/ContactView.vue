@@ -79,7 +79,7 @@
               placeholder="请输入您的姓名（2-50个字符）" 
               :class="{ 'invalid': errors.name, 'valid': name && !errors.name && name.length >= 2 }"
               @input="clearError('name')"
-              @blur="() => { const validation = validateField('name', name); if (validation.name) errors.value.name = validation.name; }"
+              @blur="() => { const validation = validateField('name', name); errors.value = { ...errors.value, ...validation }; }"
               aria-required="true"
               maxlength="50"
             />
@@ -94,7 +94,7 @@
               placeholder="请输入您的邮箱（例如：example@email.com）" 
               :class="{ 'invalid': errors.email, 'valid': email && !errors.email }"
               @input="clearError('email')"
-              @blur="() => { const validation = validateField('email', email); if (validation.email) errors.value.email = validation.email; }"
+              @blur="() => { const validation = validateField('email', email); errors.value = { ...errors.value, ...validation }; }"
               aria-required="true"
             />
             <div v-if="errors.email" class="error-message">{{ errors.email }}</div>
@@ -108,7 +108,7 @@
               placeholder="请输入您的消息（10-1000个字符）" 
               :class="{ 'invalid': errors.message, 'valid': message && !errors.message && message.length >= 10 }"
               @input="clearError('message')"
-              @blur="() => { const validation = validateField('message', message); if (validation.message) errors.value.message = validation.message; }"
+              @blur="() => { const validation = validateField('message', message); errors.value = { ...errors.value, ...validation }; }"
               aria-required="true"
               maxlength="1000"
             ></textarea>
