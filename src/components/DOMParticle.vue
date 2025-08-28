@@ -52,7 +52,9 @@ function createParticleElement(index) {
     left: `${x}px`,
     top: `${y}px`,
     boxShadow: `0 0 ${size}px ${color}`,
-    opacity: 0.7 + Math.random() * 0.3 // 随机透明度
+    opacity: 0.7 + Math.random() * 0.3, // 随机透明度
+    borderRadius: '50%', // 确保圆形
+    position: 'absolute'
   });
   
   // 返回粒子对象，包含元素和动画属性
@@ -176,7 +178,8 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style>
+/* 使用全局样式确保粒子能够正确显示 */
 .dom-particle-container {
   position: fixed;
   top: 0;
@@ -189,7 +192,6 @@ onUnmounted(() => {
 }
 
 .dom-particle {
-  position: absolute;
   border-radius: 50%; /* 确保粒子是圆形的 */
   transition: transform 0.1s ease-out;
   filter: blur(0.5px); /* 轻微模糊增加柔和度 */
