@@ -35,7 +35,7 @@
       </div>
     </div>
     <!-- 个人简介部分 -->
-    <section class="about-section scroll-reveal">
+    <section class="about-section">
       <div class="container">
         <h2 class="section-title">关于我</h2>
         <div class="about-content">
@@ -57,7 +57,7 @@
     </section>
 
     <!-- 技能亮点部分 -->
-    <section class="skills-section scroll-reveal">
+    <section class="skills-section">
       <div class="container">
         <h2 class="section-title">技能亮点</h2>
         <div class="chart-tabs">
@@ -298,8 +298,13 @@ onMounted(() => {
 /* 个人简介部分样式 */
 .about-section {
   padding: 5rem 2rem;
-  background-color: var(--bg-secondary);
+  background-color: var(--card-bg);
   position: relative;
+  z-index: 1;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  display: block !important;
 }
 
 .container {
@@ -311,8 +316,13 @@ onMounted(() => {
 /* 技能图表部分样式 */
 .skills-section {
   padding: 5rem 2rem;
-  background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+  background-color: var(--card-bg);
   position: relative;
+  z-index: 1;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  display: block !important;
 }
 
 .chart-tabs {
@@ -420,63 +430,6 @@ onMounted(() => {
   color: var(--text-secondary);
 }
 
-/* 技能亮点部分样式 */
-.skills-section {
-  padding: 5rem 2rem;
-  background-color: var(--bg-primary);
-}
-
-.skills-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.skill-category {
-  background-color: var(--bg-secondary);
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-}
-
-.category-title {
-  font-size: 1.3rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.8rem;
-  border-bottom: 2px solid var(--border-color);
-}
-
-.skill-bar {
-  margin-bottom: 1.5rem;
-}
-
-.skill-name {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.bar-container {
-  width: 100%;
-  height: 10px;
-  background-color: var(--border-color);
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent-color), var(--accent-color-hover));
-  border-radius: 5px;
-  transition: width 1.5s ease-in-out;
-}
-
-.skill-level {
-  float: right;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
 /* 滚动显示动画 */
 .scroll-reveal {
   opacity: 0;
@@ -521,50 +474,6 @@ onMounted(() => {
   .section-title {
     font-size: 1.5rem;
   }
-}
-
-/* 自定义CSS变量 */
-:root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --text-primary: #333333;
-  --text-secondary: #666666;
-  --accent-color: #0070f3;
-  --accent-color-hover: #00a3ff;
-  --border-color: #eaeaea;
-  --transition: all 0.3s ease;
-}
-
-.cta-button::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: 0.6s;
-  z-index: -1;
-}
-
-.cta-button:hover::before {
-  left: 100%;
-}
-
-.cta-button.primary {
-  background: var(--gradient-primary);
-  color: white;
-}
-
-.cta-button.secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  border: 2px solid var(--accent-color);
-}
-
-.cta-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
 }
 
 /* 滚动指示器 */
