@@ -7,7 +7,7 @@
         <div class="parallax-layer layer-2" data-speed="0.1"></div>
         <div class="parallax-layer layer-3" data-speed="0.15"></div>
       </div>
-      
+
       <div class="hero-content scroll-reveal">
         <h1 class="hero-title">欢迎来到我的个人网站</h1>
         <h2 class="hero-subtitle">你好，我是 <span class="highlight">开发者</span></h2>
@@ -19,24 +19,38 @@
       </div>
       <div class="scroll-indicator">
         <span>向下滚动</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m6 9 6 6 6-6"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m6 9 6 6 6-6" />
         </svg>
       </div>
     </div>
-      <!-- 个人简介部分 -->
+    <!-- 个人简介部分 -->
     <section class="about-section scroll-reveal">
       <div class="container">
         <h2 class="section-title">关于我</h2>
         <div class="about-content">
           <div class="about-image">
-            <img src="@/assets/images/avatar.jpg" alt="巧克力" class="profile-picture">
+            <img src="@/assets/images/avatar.jpg" alt="巧克力" class="profile-picture" />
           </div>
           <div class="about-text">
             <h3>你好，我是<span class="highlight">巧克力</span></h3>
             <p>一名充满激情的全栈开发者，拥有超过5年的Web开发经验。我热衷于创建优雅、高效且用户友好的数字体验。</p>
-            <p>我的技术栈涵盖前端和后端开发，包括HTML5、CSS3、JavaScript、Vue.js、React、Node.js等。我不断学习新技术，以保持在快速发展的行业中的竞争力。</p>
-            <p>除了编码，我还喜欢摄影、旅行和探索新的美食。我相信这些爱好能够激发我的创造力，并为我的工作带来独特的视角。</p>
+            <p>
+              我的技术栈涵盖前端和后端开发，包括HTML5、CSS3、JavaScript、Vue.js、React、Node.js等。我不断学习新技术，以保持在快速发展的行业中的竞争力。
+            </p>
+            <p>
+              除了编码，我还喜欢摄影、旅行和探索新的美食。我相信这些爱好能够激发我的创造力，并为我的工作带来独特的视角。
+            </p>
           </div>
         </div>
       </div>
@@ -47,16 +61,13 @@
       <div class="container">
         <h2 class="section-title">技能亮点</h2>
         <div class="chart-tabs">
-          <button @click="activeTab = 'all'" :class="{ 'active': activeTab === 'all' }">所有技能</button>
-          <button @click="activeTab = 'frontend'" :class="{ 'active': activeTab === 'frontend' }">前端技能</button>
-          <button @click="activeTab = 'backend'" :class="{ 'active': activeTab === 'backend' }">后端技能</button>
-          <button @click="activeTab = 'other'" :class="{ 'active': activeTab === 'other' }">其他技能</button>
+          <button @click="activeTab = 'all'" :class="{ active: activeTab === 'all' }">所有技能</button>
+          <button @click="activeTab = 'frontend'" :class="{ active: activeTab === 'frontend' }">前端技能</button>
+          <button @click="activeTab = 'backend'" :class="{ active: activeTab === 'backend' }">后端技能</button>
+          <button @click="activeTab = 'other'" :class="{ active: activeTab === 'other' }">其他技能</button>
         </div>
         <div class="chart-container">
-          <SkillChart 
-            :skills="currentSkills" 
-            chartType="radar"
-          />
+          <SkillChart v-if="showChart" :skills="currentSkills" chartType="radar" />
         </div>
       </div>
     </section>
@@ -64,77 +75,92 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue';
-import SkillChart from '../components/SkillChart.vue';
+import { onMounted, ref, computed, watch } from "vue"
+import SkillChart from "../components/SkillChart.vue"
 
 // 切换图表显示的选项卡
-const activeTab = ref('all');
+const activeTab = ref("all")
+const showChart = ref(true)
+let chartTimer = null
 
 // 技能数据
 const skillsData = [
-  { name: 'HTML5 & CSS3', level: 90, category: 'frontend' },
-  { name: 'JavaScript', level: 85, category: 'frontend' },
-  { name: 'Vue.js', level: 80, category: 'frontend' },
-  { name: 'React', level: 75, category: 'frontend' },
-  { name: 'Node.js', level: 80, category: 'backend' },
-  { name: 'Express', level: 75, category: 'backend' },
-  { name: 'MongoDB', level: 70, category: 'backend' },
-  { name: 'RESTful API', level: 85, category: 'backend' },
-  { name: 'Git', level: 85, category: 'other' },
-  { name: 'Webpack', level: 70, category: 'other' },
-  { name: '响应式设计', level: 90, category: 'other' },
-  { name: 'UI/UX设计基础', level: 65, category: 'other' }
-];
+  { name: "HTML5 & CSS3", level: 90, category: "frontend" },
+  { name: "JavaScript", level: 85, category: "frontend" },
+  { name: "Vue.js", level: 80, category: "frontend" },
+  { name: "React", level: 75, category: "frontend" },
+  { name: "Node.js", level: 80, category: "backend" },
+  { name: "Express", level: 75, category: "backend" },
+  { name: "MongoDB", level: 70, category: "backend" },
+  { name: "RESTful API", level: 85, category: "backend" },
+  { name: "Git", level: 85, category: "other" },
+  { name: "Webpack", level: 70, category: "other" },
+  { name: "响应式设计", level: 90, category: "other" },
+  { name: "UI/UX设计基础", level: 65, category: "other" },
+]
+
+// 监听activeTab变化，短暂隐藏组件后重新显示
+watch(activeTab, (newTab) => {
+  // 隐藏图表
+  showChart.value = false
+
+  // 清除之前的定时器
+  clearTimeout(chartTimer)
+
+  // 延迟100ms后重新显示图表
+  chartTimer = setTimeout(() => {
+    showChart.value = true
+  }, 100)
+})
 
 // 使用计算属性来响应式地过滤技能数据
-const frontendSkills = computed(() => skillsData.filter(skill => skill.category === 'frontend'));
-const backendSkills = computed(() => skillsData.filter(skill => skill.category === 'backend'));
-const otherSkills = computed(() => skillsData.filter(skill => skill.category === 'other'));
+const frontendSkills = computed(() => skillsData.filter((skill) => skill.category === "frontend"))
+const backendSkills = computed(() => skillsData.filter((skill) => skill.category === "backend"))
+const otherSkills = computed(() => skillsData.filter((skill) => skill.category === "other"))
 
 // 计算当前要显示的技能数据
 const currentSkills = computed(() => {
-  if (activeTab.value === 'frontend') return frontendSkills.value;
-  if (activeTab.value === 'backend') return backendSkills.value;
-  if (activeTab.value === 'other') return otherSkills.value;
-  return skillsData;
-});
+  if (activeTab.value === "frontend") return frontendSkills.value
+  if (activeTab.value === "backend") return backendSkills.value
+  if (activeTab.value === "other") return otherSkills.value
+  return skillsData
+})
 
 // 添加滚动动画效果和视差效果
 onMounted(() => {
+  const handleScroll = () => {
+    const scrollElements = document.querySelectorAll(".scroll-reveal")
+    const parallaxLayers = document.querySelectorAll(".parallax-layer")
+    const scrollY = window.scrollY
 
-const handleScroll = () => {
-        const scrollElements = document.querySelectorAll('.scroll-reveal');
-        const parallaxLayers = document.querySelectorAll('.parallax-layer');
-        const scrollY = window.scrollY;
+    // 滚动显示动画
+    scrollElements.forEach((el) => {
+      const elementHeight = el.offsetHeight
+      const elementTop = el.getBoundingClientRect().top + scrollY
+      const elementVisible = 150
 
-        // 滚动显示动画
-        scrollElements.forEach(el => {
-            const elementHeight = el.offsetHeight;
-            const elementTop = el.getBoundingClientRect().top + scrollY;
-            const elementVisible = 150;
+      if (scrollY > elementTop - window.innerHeight + elementVisible) {
+        el.classList.add("active")
+      }
+    })
 
-            if (scrollY > elementTop - window.innerHeight + elementVisible) {
-                el.classList.add('active');
-            }
-        });
+    // 视差效果
+    parallaxLayers.forEach((layer) => {
+      const speed = parseFloat(layer.dataset.speed) || 0.1
+      const yPos = -(scrollY * speed)
+      layer.style.transform = `translateY(${yPos}px)`
+    })
+  }
 
-        // 视差效果
-        parallaxLayers.forEach(layer => {
-            const speed = parseFloat(layer.dataset.speed) || 0.1;
-            const yPos = -(scrollY * speed);
-            layer.style.transform = `translateY(${yPos}px)`;
-        });
-    };
+  // 初始检查
+  handleScroll()
+  // 监听滚动事件
+  window.addEventListener("scroll", handleScroll)
 
-    // 初始检查
-    handleScroll();
-    // 监听滚动事件
-    window.addEventListener('scroll', handleScroll);
-
-    return () => {
-        window.removeEventListener('scroll', handleScroll);
-    };
-});
+  return () => {
+    window.removeEventListener("scroll", handleScroll)
+  }
+})
 </script>
 
 <style scoped>
@@ -299,20 +325,23 @@ const handleScroll = () => {
 
 .chart-tabs button {
   padding: 0.5rem 1rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: none;
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .chart-tabs button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--hover-bg);
+  border-color: var(--accent-color);
 }
 
 .chart-tabs button.active {
   background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -324,6 +353,12 @@ const handleScroll = () => {
   background-color: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  /* 设置固定高度，避免组件切换时页面滑动 */
+  min-height: 420px;
+  height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .section-title {
@@ -334,7 +369,7 @@ const handleScroll = () => {
 }
 
 .section-title::after {
-  content: '';
+  content: "";
   display: block;
   width: 80px;
   height: 4px;
@@ -501,7 +536,7 @@ const handleScroll = () => {
 }
 
 .cta-button::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -554,9 +589,19 @@ const handleScroll = () => {
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-20px); }
-  60% { transform: translateY(-10px); }
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(-10px);
+  }
 }
 
 /* 响应式设计 */
@@ -564,24 +609,24 @@ const handleScroll = () => {
   .hero-section {
     padding: 1rem;
   }
-  
+
   .hero-content {
     padding: 1rem;
   }
-  
+
   .hero-title {
     font-size: 2rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.5rem;
   }
-  
+
   .hero-description {
     font-size: 1rem;
     padding: 0 0.5rem;
   }
-  
+
   .cta-buttons {
     flex-direction: column;
     align-items: center;
@@ -589,7 +634,7 @@ const handleScroll = () => {
     max-width: 300px;
     padding: 0 1rem;
   }
-  
+
   .cta-button {
     width: 100%;
     max-width: 280px;
@@ -602,11 +647,11 @@ const handleScroll = () => {
   .hero-title {
     font-size: 1.8rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.3rem;
   }
-  
+
   .scroll-indicator {
     bottom: 2rem;
   }

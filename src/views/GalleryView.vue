@@ -449,7 +449,7 @@ h1, h2, h3 {
 
 /* 增强select元素的可见性 */
 .category-select {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
   border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
@@ -458,6 +458,12 @@ h1, h2, h3 {
   cursor: pointer;
   transition: border-color 0.3s ease;
   opacity: 1 !important;
+  appearance: none;
+  position: relative;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 16px 16px !important;
 }
 
 .category-select:focus {
@@ -468,9 +474,20 @@ h1, h2, h3 {
 
 /* 确保选项元素可见 */
 .category-select option {
-  background: var(--card-bg) !important;
+  background: var(--secondary-bg) !important;
   color: var(--text-primary) !important;
   opacity: 1 !important;
+  padding: 0.5rem !important;
+}
+
+/* 针对浅色模式的特殊处理 */
+.light-mode .category-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+}
+
+.light-mode .category-select option {
+  background: var(--primary-bg) !important;
+  color: var(--text-primary) !important;
 }
 
 .view-toggle {
@@ -839,43 +856,9 @@ h1, h2, h3 {
 }
 </style>
 
-<!-- 添加非scoped的全局样式，优先级更高，确保所有元素可见 -->
-<style>
-/* 全局高优先级样式，专门解决元素不可见问题 */
-#app .gallery-container h1,
-#app .gallery-container h2,
-#app .gallery-container h3 {
-  color: var(--text-primary) !important;
-  opacity: 1 !important;
-  font-weight: 700 !important;
-}
-
-#app .gallery-container p,
-#app .gallery-container span,
-#app .gallery-container div {
-  color: var(--text-primary) !important;
-  opacity: 1 !important;
-}
-
-#app .gallery-container input,
-#app .gallery-container select,
-#app .gallery-container option {
-  background: var(--card-bg) !important;
-  color: var(--text-primary) !important;
-  opacity: 1 !important;
-}
-
-/* 关键修改：移除背景色和相对定位，让gallery-container完全透明 */
-#app .gallery-container {
-  background: transparent !important;
-  /* 完全透明，让粒子背景完全可见 */
-  position: static !important;
-  /* 使用static定位，不创建新的堆叠上下文 */
-  z-index: auto !important;
-  /* 不设置z-index，让自然层级生效 */
-}
-
-/* 关键修改：确保所有内容元素都有合适的z-index */
+<!-- 组件特定样式，只影响GalleryView组件 -->
+<style scoped>
+/* 确保所有内容元素都有合适的z-index */
 .gallery-header,
 .filter-controls,
 .gallery-grid,
@@ -885,27 +868,5 @@ h1, h2, h3 {
   position: relative;
   z-index: 10;
   /* 为内容元素设置合适的z-index，确保它们显示在背景之上 */
-}
-
-/* 确保粒子背景在最底层显示 */
-.background-container {
-  z-index: -1 !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: transparent !important;
-  /* 确保背景容器是透明的 */
-}
-
-/* 确保粒子canvas在背景容器中正确显示 */
-.particle-background {
-  z-index: -1 !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
 }
 </style>

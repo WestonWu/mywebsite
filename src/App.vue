@@ -316,10 +316,10 @@ select {
 }
 
 .effect-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
@@ -328,13 +328,15 @@ select {
 }
 
 .effect-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--hover-bg);
+  border-color: var(--accent-color);
   transform: translateY(-2px);
 }
 
 .effect-btn.active {
   background: var(--accent-color);
   border-color: var(--accent-color);
+  color: white;
   box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
 }
 
