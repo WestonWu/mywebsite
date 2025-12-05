@@ -37,27 +37,35 @@ function createRaindropElement() {
   // 设置样式类
   element.classList.add('raindrop');
   
-  // 随机大小和透明度
-  const width = 1 + Math.random() * 2; // 宽度1-3px
-  const height = 15 + Math.random() * 25; // 高度15-40px
-  const opacity = 0.4 + Math.random() * 0.6; // 透明度0.4-1.0
+  // 随机大小和透明度，更真实的雨滴大小
+  const width = 1 + Math.random() * 1.5; // 宽度1-2.5px，更细的雨滴
+  const height = 8 + Math.random() * 20; // 高度8-28px，更符合真实雨滴
+  const opacity = 0.5 + Math.random() * 0.5; // 透明度0.5-1.0
   
   // 计算初始位置
   const x = Math.random() * window.innerWidth;
   const y = -height - Math.random() * 100; // 从屏幕上方开始
   
-  // 设置初始样式
+  // 创建更真实的雨滴形状和渐变效果
+  const gradient = `linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.9), 
+    rgba(200, 230, 255, 0.8), 
+    rgba(150, 210, 255, 0.5), 
+    rgba(100, 190, 255, 0.3))`;
+  
+  // 设置初始样式，更真实的雨滴外观
   Object.assign(element.style, {
     width: `${width}px`,
     height: `${height}px`,
-    backgroundColor: 'rgba(173, 216, 230, 0.7)', // 简化为纯色，提升性能
+    background: gradient, // 使用渐变效果，更真实
     left: `${x}px`,
     top: `${y}px`,
     opacity: opacity,
     position: 'absolute',
-    borderRadius: '50% 50% 60% 40%', // 不规则圆形，更自然
+    borderRadius: '90% 90% 80% 80% / 80% 80% 90% 90%', // 更真实的雨滴形状
     pointerEvents: 'none', // 不影响鼠标事件
-    // 移除模糊和阴影效果以提升性能
+    boxShadow: '0 0 3px rgba(255, 255, 255, 0.5)', // 轻微发光效果，模拟雨滴反光
+    filter: 'blur(0.5px)', // 轻微模糊，模拟运动模糊
     transform: `translate(0, 0)`, // 使用transform提升性能
     willChange: 'transform' // 提示浏览器该元素将要改变
   });
@@ -69,13 +77,14 @@ function createRaindropElement() {
     y: y,
     width: width,
     height: height,
-    speed: 5 + Math.random() * 10, // 下落速度5-15px/帧
-    wind: -2 + Math.random() * 4, // 水平风力影响-2到2px/帧
+    speed: 3 + Math.random() * 8, // 初始速度3-11px/帧
+    acceleration: 0.1 + Math.random() * 0.1, // 加速度，雨滴下落会加速
+    wind: -1 + Math.random() * 2, // 水平风力影响-1到1px/帧，更真实
     opacity: opacity,
-    sway: Math.random() * 0.5, // 摆动幅度
+    sway: Math.random() * 0.3, // 摆动幅度
     swayPhase: Math.random() * Math.PI * 2, // 摆动相位
-    rotation: Math.random() * 360, // 初始旋转角度
-    rotationSpeed: -2 + Math.random() * 4 // 旋转速度-2到2度/帧
+    rotation: Math.random() * 10 - 5, // 初始旋转角度，-5到5度，更真实
+    rotationSpeed: -0.5 + Math.random() * 1 // 旋转速度-0.5到0.5度/帧，更真实
   };
 }
 
@@ -139,36 +148,46 @@ function animate() {
   // 更新雨滴
   raindrops.forEach(raindrop => {
     // 更新摆动相位
-    raindrop.swayPhase += 0.05;
+    raindrop.swayPhase += 0.07; // 增加摆动频率，更自然
     
-    // 更新位置
+    // 应用加速度，雨滴下落会加速
+    raindrop.speed += raindrop.acceleration;
+    // 限制最大速度，防止雨滴下落过快
+    raindrop.speed = Math.min(raindrop.speed, 20); // 最大速度20px/帧
+    
+    // 更新位置，添加更自然的摆动效果
     raindrop.y += raindrop.speed;
-    raindrop.x += raindrop.wind + Math.sin(raindrop.swayPhase) * raindrop.sway; // 添加摆动效果
+    raindrop.x += raindrop.wind + Math.sin(raindrop.swayPhase) * raindrop.sway * Math.sin(raindrop.y * 0.01); // 增强摆动效果，模拟风力变化
     
-    // 更新旋转角度
-    raindrop.rotation += raindrop.rotationSpeed;
+    // 更新旋转角度，更轻微的旋转
+    raindrop.rotation += raindrop.rotationSpeed * 0.1; // 减慢旋转速度
     
     // 如果雨滴落到屏幕底部，创建水花并重置位置
-    // 调整落地检测条件，增加一个小的缓冲区
     if (raindrop.y > window.innerHeight - raindrop.height - 5) {
       // 创建水花溅起效果，使用雨滴底部中心位置
       createSplash(raindrop.x + raindrop.width/2, window.innerHeight);
       
-      // 重置雨滴位置到顶部
+      // 重置雨滴位置到顶部，并重置速度
       raindrop.y = -raindrop.height - Math.random() * 100;
       raindrop.x = Math.random() * window.innerWidth;
+      raindrop.speed = 3 + Math.random() * 8; // 重置速度
       raindrop.swayPhase = Math.random() * Math.PI * 2; // 重置摆动相位
+      raindrop.rotation = Math.random() * 10 - 5; // 重置旋转角度
     }
     
     // 如果雨滴移出水平边界，调整位置
     if (raindrop.x < -raindrop.width) {
       raindrop.x = window.innerWidth;
+      raindrop.swayPhase = Math.random() * Math.PI * 2; // 重置摆动相位
     } else if (raindrop.x > window.innerWidth) {
       raindrop.x = -raindrop.width;
+      raindrop.swayPhase = Math.random() * Math.PI * 2; // 重置摆动相位
     }
     
     // 使用transform应用位置和旋转更新，提升性能
     raindrop.element.style.transform = `translate(${raindrop.x}px, ${raindrop.y}px) rotate(${raindrop.rotation}deg)`;
+    // 根据速度调整透明度，更快的雨滴更亮
+    raindrop.element.style.opacity = Math.min(raindrop.opacity, raindrop.speed * 0.05);
   });
   
   // 更新水花粒子
@@ -181,7 +200,7 @@ function animate() {
     splash.y += splash.speedY;
     
     // 更新生命周期
-    splash.life -= 0.01; // 进一步减慢生命周期消耗速度
+    splash.life -= 0.015; // 调整生命周期消耗速度
     splash.opacity = splash.life * 0.8; // 调整透明度计算
     
     // 使用transform应用更新，提升性能
