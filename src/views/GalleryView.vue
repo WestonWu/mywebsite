@@ -759,12 +759,30 @@ h3 {
   }
 
   .gallery-grid.list-view .gallery-item {
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
   }
 
   .gallery-grid.list-view .gallery-image-container {
-    width: 100%;
-    height: 200px;
+    width: 150px;
+    height: 100px;
+    flex-shrink: 0;
+  }
+
+  /* 为更小的屏幕添加适配 */
+  @media (max-width: 480px) {
+    .gallery-grid.list-view .gallery-image-container {
+      width: 120px;
+      height: 80px;
+    }
+
+    .gallery-item-info {
+      padding: 1rem;
+    }
+
+    .gallery-item-info h3 {
+      font-size: 1.1rem;
+    }
   }
 
   .modal-content {

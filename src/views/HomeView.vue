@@ -391,15 +391,15 @@ onMounted(() => {
 .about-content {
   display: flex;
   flex-wrap: wrap;
-  gap: 3rem;
+  gap: 2rem;
   align-items: center;
   justify-content: center;
 }
 
 .about-image {
   flex: 1;
-  min-width: 250px;
-  max-width: 350px;
+  min-width: 200px;
+  max-width: 300px;
 }
 
 .profile-picture {
@@ -415,8 +415,9 @@ onMounted(() => {
 /* 删除伪元素，因为我们现在使用实际图片 */
 
 .about-text {
-  flex: 2;
-  min-width: 300px;
+  flex: 1;
+  min-width: 250px;
+  max-width: 600px;
 }
 
 .about-text h3 {
@@ -447,6 +448,15 @@ onMounted(() => {
   .about-content {
     flex-direction: column;
     text-align: center;
+    gap: 1.5rem;
+  }
+
+  .about-image {
+    max-width: 250px;
+  }
+
+  .profile-picture {
+    border-width: 3px;
   }
 
   .section-title {
@@ -455,6 +465,38 @@ onMounted(() => {
 
   .about-text h3 {
     font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-content {
+    gap: 1rem;
+  }
+
+  .about-image {
+    max-width: 200px;
+    min-width: 150px;
+  }
+
+  .profile-picture {
+    border-width: 2px;
+  }
+
+  .about-text {
+    min-width: auto;
+    padding: 0 1rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .about-text h3 {
+    font-size: 1.2rem;
+  }
+
+  .about-text p {
+    font-size: 0.9rem;
   }
 }
 
