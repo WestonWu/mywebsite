@@ -40,3 +40,6 @@ out/
 # OS files
 Thumbs.db
 .DS_Store
+
+# Trae AI tool files
+.trae/
