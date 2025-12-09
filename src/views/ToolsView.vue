@@ -444,6 +444,13 @@ export default {
         },
       ],
       selectedToolId: "qr-code", // 默认选中URL转二维码工具
+      // 纠错级别选项
+      errorCorrectionOptions: [
+        { value: "L", label: "低 (L)" },
+        { value: "M", label: "中 (M)" },
+        { value: "Q", label: "较高 (Q)" },
+        { value: "H", label: "高 (H)" },
+      ],
       // 选项组折叠状态
       groups: {
         main: true,
