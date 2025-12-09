@@ -777,6 +777,7 @@ export default {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px var(--shadow-color);
+  margin-bottom: 1rem;
 }
 
 /* 分组标题 */
@@ -785,34 +786,49 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  background: var(--hover-bg);
+  background: var(--accent-color);
   cursor: pointer;
   transition: all 0.3s ease;
   user-select: none;
+  border-radius: 8px 8px 0 0;
 }
 
 .group-header:hover {
   background: var(--accent-color-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .group-header h3 {
   margin: 0;
   font-size: 1.1rem;
-  color: var(--text-primary) !important;
+  color: white !important;
   opacity: 1 !important;
+  font-weight: 600 !important;
 }
 
 .toggle-icon {
-  font-size: 0.8rem;
-  color: var(--text-secondary) !important;
-  opacity: 0.8 !important;
+  font-size: 1rem;
+  color: white !important;
+  opacity: 1 !important;
   transition: transform 0.3s ease;
+  font-weight: bold;
 }
 
 /* 分组内容 */
 .group-content {
   padding: 1.5rem;
   border-top: 1px solid var(--border-color);
+  background: var(--card-bg);
+  display: block;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+/* 确保group-content在展开时能完全显示 */
+.group-content {
+  max-height: none;
+  height: auto;
 }
 
 /* 选项组内的选项 */
@@ -821,6 +837,13 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  opacity: 1 !important;
+}
+
+/* 确保选项组内容可见 */
+.option-group * {
+  opacity: 1 !important;
+  color: var(--text-primary) !important;
 }
 
 .option-row {
