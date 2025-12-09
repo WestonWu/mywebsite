@@ -4,22 +4,10 @@
     <div class="about-content">
       <div class="about-grid">
         <div class="about-text">
-          <p>你好，我是一名专注于创建现代化、高性能web应用的开发者。我热爱探索新技术，并将其应用到实际项目中。</p>
-          <p>我相信简洁的设计和高效的代码可以创造出卓越的用户体验。</p>
-          <!-- 简历下载按钮 -->
-          <a 
-            href="/resume_example.txt" 
-            download="简历示例.txt" 
-            class="resume-download-btn"
-            aria-label="下载简历"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            下载我的简历
-          </a>
+          <p>你好，我是巧克力，一名具有丰富经验的售后技术支持工程师，同时也是一名自学成才的开发者。</p>
+          <p>
+            本人性格内外结合，适应能力强，为人诚实，有良好的人际交往能力，具备相关的专业知识，拥有认真、细心和耐心的工作态度及良好的职业道德。相信团体精神的我对工作认真负责，希望能把事情做得更好。
+          </p>
         </div>
         <div class="about-image">
           <div class="image-placeholder">
@@ -31,12 +19,13 @@
       <div class="skills">
         <h2>技能专长</h2>
         <ul>
-          <li>前端开发 (Vue, JavaScript, HTML, CSS)</li>
-          <li>后端开发</li>
-          <li>数据库设计</li>
-          <li>响应式设计</li>
-          <li>UI/UX设计</li>
-          <li>性能优化</li>
+          <li>前端开发 (Vue, JavaScript)</li>
+          <li>后端开发 (Nodejs)</li>
+          <li>微信小程序开发</li>
+          <li>Delphi 编程</li>
+          <li>办公软件 (Office, Word, Excel, PPT)</li>
+          <li>英文</li>
+          <li>粤语</li>
         </ul>
       </div>
 
@@ -45,30 +34,35 @@
         <h2>工作经历</h2>
         <div class="timeline-items">
           <div class="timeline-item">
-            <div class="timeline-date">2022年至今</div>
+            <div class="timeline-date">2012/10 — 至今</div>
             <div class="timeline-content">
-              <h3>高级前端开发工程师</h3>
-              <p class="company">云帆科技有限公司</p>
-              <p>负责企业级SaaS平台的前端架构设计与开发，使用Vue 3 + TypeScript构建高性能、可扩展的用户界面。主导实施微前端架构，将大型单页应用拆分为8个子应用，提升了团队协作效率和页面加载速度。</p>
-              <p>优化数据可视化模块，引入ECharts替代传统图表库，将大数据集渲染性能提升40%。建立组件库系统，减少代码重复率30%，标准化开发流程。</p>
+              <h3>售后技术支持</h3>
+              <p class="company">拔萃软件有限公司（澳门）</p>
+              <p>
+                根据客户提出的需求，整理归档，并交由研发部门开发；接受客户系统数据接口技术文档，根据自家系统需求对客户数据接口进行分析，列出需要的数据接口，然后进行相应的补充说明，之后提交给开发部门。
+              </p>
+              <p>
+                就研发部门在研发过程中提出的相关问题与客户进行沟通和磋商，并将问题的结论交给研发部门；在系统更新或者研发出来后，直接参与系统的测试，包括制作或者更新系统测试文档，确保系统的所有模块都包含在测试过程中。
+              </p>
+              <p>
+                客户在使用系统过程中有任何的问题，直接与我联系。帮助客户解决一些操作异常导致的问题，并数据库异常做一些基础维护。如果是系统出现了异常，负责收集客户数据资料，整理分析系统异常出现的大致原因，并交由研发部门做进一步处理。
+              </p>
+              <p>
+                自学 Delphi
+                编写了一个方便为客户提供接口文件的小程序；自学了微信小程序开发，做过一个点餐小程序和场地预约小程序；自学了
+                Vue 前端开发和 Nodejs 后端开发，配合点餐小程序，做了对应的 web 后台管理和后端服务器。
+              </p>
+              <p>PS：由于客户大都是用英文交流，有较好的英文基础。</p>
             </div>
           </div>
           <div class="timeline-item">
-            <div class="timeline-date">2019年-2022年</div>
+            <div class="timeline-date">2012/6 — 2012/8</div>
             <div class="timeline-content">
-              <h3>前端开发工程师</h3>
-              <p class="company">星辰互联网科技有限公司</p>
-              <p>参与电商平台和移动应用的前端开发，使用React和Redux构建响应式跨平台界面。负责商品详情页和购物车功能的重构，提升用户转化率15%。</p>
-              <p>与后端团队协作，基于RESTful API实现前后端数据交互，优化接口调用策略，减少网络请求30%。实现PWA功能，支持离线访问，提升用户体验。</p>
-            </div>
-          </div>
-          <div class="timeline-item">
-            <div class="timeline-date">2017年-2019年</div>
-            <div class="timeline-content">
-              <h3>Web开发工程师</h3>
-              <p class="company">新锐软件技术有限公司</p>
-              <p>负责企业官网和客户管理系统的前端开发和维护，使用HTML5、CSS3和JavaScript实现响应式设计。将传统jQuery项目迁移至Vue.js框架，提升代码可维护性。</p>
-              <p>优化页面加载性能，通过懒加载和CDN缓存策略，将首屏加载时间从5秒减少至1.5秒。参与敏捷开发流程，每周迭代发布新版本，及时响应用户需求。</p>
+              <h3>C 语言开发</h3>
+              <p class="company">浙江网新富士科技有限公司（杭州）</p>
+              <p>
+                给日本水电站项目开发管理系统，主要负责数据计算代码编写和使用；参与整个项目系统测试，并对数据计算速度进行优化。
+              </p>
             </div>
           </div>
         </div>
@@ -79,23 +73,28 @@
         <h2>教育背景</h2>
         <div class="education-items">
           <div class="education-item">
-            <div class="education-date">2013年-2017年</div>
+            <div class="education-date">2008/9 — 2012/6</div>
             <div class="education-content">
               <h3>计算机科学与技术</h3>
               <p class="degree">学士学位</p>
-              <p class="university">南京大学</p>
-              <p>主修计算机科学与技术专业，辅修软件工程。GPA 3.8/4.0，连续三年获得国家奖学金。在校期间担任计算机科学社团技术部部长，组织多次技术分享会。</p>
-              <p>参与省级科研项目《基于深度学习的网络流量分析系统》，负责前端可视化模块开发。获得"互联网+"大学生创新创业大赛省级一等奖。</p>
+              <p class="university">湖南大学</p>
+              <p>主修计算机科学与技术专业，系统学习了计算机相关理论知识和实践技能。</p>
             </div>
           </div>
           <div class="education-item">
-            <div class="education-date">2010年-2013年</div>
+            <div class="education-date">2007/9 — 2008/6</div>
             <div class="education-content">
-              <h3>理科</h3>
-              <p class="degree">高中</p>
-              <p class="university">南京师范大学附属中学</p>
-              <p>理科强化班，重点学习数学、物理和计算机基础。担任班级学习委员，多次获得校级三好学生称号。</p>
-              <p>参加全国青少年信息学奥林匹克联赛（NOIP）获得省级一等奖，在数学和物理竞赛中多次获奖。</p>
+              <h3>高中</h3>
+              <p class="degree">普通高中</p>
+              <p class="university">柳州市第一高中</p>
+            </div>
+          </div>
+          <div class="education-item">
+            <div class="education-date">2004/9 — 2007/6</div>
+            <div class="education-content">
+              <h3>高中</h3>
+              <p class="degree">普通高中</p>
+              <p class="university">柳州市高级中学</p>
             </div>
           </div>
         </div>
@@ -148,32 +147,6 @@
   background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
 }
 
-/* 简历下载按钮样式 */
-.resume-download-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--gradient-primary);
-  color: white;
-  padding: 10px 20px;
-  border-radius: var(--border-radius);
-  text-decoration: none;
-  font-weight: 500;
-  margin-top: 1.5rem;
-  transition: var(--transition);
-  border: none;
-}
-
-.resume-download-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(58, 134, 255, 0.3);
-  color: white;
-}
-
-.resume-download-btn::after {
-  display: none;
-}
-
 /* 时间线样式 */
 .timeline {
   margin: 3rem 0;
@@ -185,7 +158,7 @@
 }
 
 .timeline-items::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -227,7 +200,7 @@
 }
 
 .timeline-content::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 1rem;
   left: -1.5rem;
@@ -304,6 +277,6 @@
 :root {
   --primary-color: var(--accent-color);
   --secondary-color: var(--accent-color-hover);
-  --border-radius: var(--border-radius);
+  --border-radius: 8px;
 }
 </style>
