@@ -26,6 +26,9 @@
             <li>
                 <router-link to="/blog" @click="closeMenu">博客文章</router-link>
             </li>
+            <li>
+                <router-link to="/tools" @click="closeMenu">实用工具</router-link>
+            </li>
         </ul>
         <!-- 主题切换按钮 -->
         <button 

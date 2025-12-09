@@ -10,6 +10,7 @@
     "@emailjs/browser": "^4.4.1",
     "chart.js": "^4.5.0",
     "emailjs-com": "^3.2.0",
+    "qr-code-styling": "^1.9.2",
     "vue": "^3.3.4",
     "vue-chartjs": "^5.3.2",
     "vue-router": "^4.2.4"

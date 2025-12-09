@@ -6,6 +6,7 @@ import ContactView from "../views/ContactView.vue"
 import GalleryView from "../views/GalleryView.vue"
 import BlogView from "../views/BlogView.vue"
 import BlogPostView from "../views/BlogPostView.vue"
+import ToolsView from "../views/ToolsView.vue"
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -54,6 +55,14 @@ const router = createRouter({
         title: "博客详情"
       },
       props: true
+    },
+    {
+      path: "/tools",
+      name: "tools",
+      component: ToolsView,
+      meta: {
+        title: "实用工具"
+      }
     },
   ]
 })
