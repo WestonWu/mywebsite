@@ -29,41 +29,381 @@
         </div>
 
         <div class="qr-tool-body">
-          <div class="qr-input-section">
-            <label for="url-input">输入 URL</label>
-            <input
-              type="url"
-              id="url-input"
-              v-model="urlInput"
-              placeholder="https://example.com"
-              class="url-input"
-              @input="generateQRCode"
-            />
-            <div class="qr-options">
-              <div class="option-group">
-                <label for="qr-size">二维码大小</label>
-                <input
-                  type="range"
-                  id="qr-size"
-                  v-model.number="qrSize"
-                  min="200"
-                  max="500"
-                  step="50"
-                  @input="generateQRCode"
-                />
-                <span>{{ qrSize }}px</span>
+          <!-- 左侧：配置选项 -->
+          <div class="qr-config-section">
+            <!-- 主选项 -->
+            <div class="qr-options-group">
+              <div class="group-header" @click="toggleGroup('main')">
+                <h3>主选项</h3>
+                <span class="toggle-icon">{{ groups.main ? "▼" : "▶" }}</span>
               </div>
-              <div class="option-group">
-                <label for="error-correction">纠错级别</label>
-                <custom-select
-                  v-model="errorCorrection"
-                  :options="errorCorrectionOptions"
-                  @update:modelValue="generateQRCode"
-                ></custom-select>
+              <div v-if="groups.main" class="group-content">
+                <div class="option-group">
+                  <label for="url-input">输入 URL</label>
+                  <input
+                    type="url"
+                    id="url-input"
+                    v-model="urlInput"
+                    placeholder="https://example.com"
+                    class="url-input"
+                    @input="generateQRCode"
+                  />
+                </div>
+                <div class="option-row">
+                  <div class="option-group">
+                    <label for="qr-width">宽度</label>
+                    <input
+                      type="number"
+                      id="qr-width"
+                      v-model.number="qrConfig.width"
+                      min="100"
+                      max="1000"
+                      step="50"
+                      @input="generateQRCode"
+                    />
+                    <span>px</span>
+                  </div>
+                  <div class="option-group">
+                    <label for="qr-height">高度</label>
+                    <input
+                      type="number"
+                      id="qr-height"
+                      v-model.number="qrConfig.height"
+                      min="100"
+                      max="1000"
+                      step="50"
+                      @input="generateQRCode"
+                    />
+                    <span>px</span>
+                  </div>
+                </div>
+                <div class="option-group">
+                  <label for="qr-margin">边距</label>
+                  <input
+                    type="number"
+                    id="qr-margin"
+                    v-model.number="qrConfig.margin"
+                    min="0"
+                    max="100"
+                    step="1"
+                    @input="generateQRCode"
+                  />
+                  <span>px</span>
+                </div>
+                <div class="option-group">
+                  <label for="image-upload">图片文件</label>
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/*"
+                    @change="handleImageUpload"
+                    class="image-upload"
+                  />
+                  <button v-if="selectedImage" @click="clearImage" class="clear-btn">清除</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 点选项 -->
+            <div class="qr-options-group">
+              <div class="group-header" @click="toggleGroup('dots')">
+                <h3>点选项</h3>
+                <span class="toggle-icon">{{ groups.dots ? "▼" : "▶" }}</span>
+              </div>
+              <div v-if="groups.dots" class="group-content">
+                <div class="option-group">
+                  <label for="dots-style">点样式</label>
+                  <custom-select
+                    v-model="qrConfig.dotsOptions.type"
+                    :options="styleOptions"
+                    @update:modelValue="generateQRCode"
+                  ></custom-select>
+                </div>
+                <div class="option-group">
+                  <label>颜色类型</label>
+                  <div class="color-type-options">
+                    <label class="radio-label">
+                      <input
+                        type="radio"
+                        v-model="qrConfig.dotsOptions.colorType"
+                        value="single"
+                        @change="generateQRCode"
+                      />
+                      <span>单色</span>
+                    </label>
+                    <label class="radio-label">
+                      <input
+                        type="radio"
+                        v-model="qrConfig.dotsOptions.colorType"
+                        value="gradient"
+                        @change="generateQRCode"
+                      />
+                      <span>渐变</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="option-group">
+                  <label for="dots-color">点颜色</label>
+                  <input
+                    type="color"
+                    id="dots-color"
+                    v-model="qrConfig.dotsOptions.color"
+                    @input="generateQRCode"
+                    class="color-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 角方块选项 -->
+            <div class="qr-options-group">
+              <div class="group-header" @click="toggleGroup('cornersSquare')">
+                <h3>角方块选项</h3>
+                <span class="toggle-icon">{{ groups.cornersSquare ? "▼" : "▶" }}</span>
+              </div>
+              <div v-if="groups.cornersSquare" class="group-content">
+                <div class="option-group">
+                  <label for="corners-square-style">角方块样式</label>
+                  <custom-select
+                    v-model="qrConfig.cornersSquareOptions.type"
+                    :options="styleOptions"
+                    @update:modelValue="generateQRCode"
+                  ></custom-select>
+                </div>
+                <div class="option-group">
+                  <label>颜色类型</label>
+                  <div class="color-type-options">
+                    <label class="radio-label">
+                      <input
+                        type="radio"
+                        v-model="qrConfig.cornersSquareOptions.colorType"
+                        value="single"
+                        @change="generateQRCode"
+                      />
+                      <span>单色</span>
+                    </label>
+                    <label class="radio-label">
+                      <input
+                        type="radio"
+                        v-model="qrConfig.cornersSquareOptions.colorType"
+                        value="gradient"
+                        @change="generateQRCode"
+                      />
+                      <span>渐变</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="option-group">
+                  <label for="corners-square-color">角方块颜色</label>
+                  <input
+                    type="color"
+                    id="corners-square-color"
+                    v-model="qrConfig.cornersSquareOptions.color"
+                    @input="generateQRCode"
+                    class="color-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 角点选项 -->
+            <div class="qr-options-group">
+              <div class="group-header" @click="toggleGroup('cornersDot')">
+                <h3>角点选项</h3>
+                <span class="toggle-icon">{{ groups.cornersDot ? "▼" : "▶" }}</span>
+              </div>
+              <div v-if="groups.cornersDot" class="group-content">
+                <div class="option-group">
+                  <label for="corners-dot-style">角点样式</label>
+                  <custom-select
+                    v-model="qrConfig.cornersDotOptions.type"
+                    :options="cornerDotStyleOptions"
+                    @update:modelValue="generateQRCode"
+                  ></custom-select>
+                </div>
+                <div class="option-group">
+                  <label>颜色类型</label>
+                  <div class="color-type-options">
+                    <label class="radio-label">
+                      <input
+                        type="radio"
+                        v-model="qrConfig.cornersDotOptions.colorType"
+                        value="single"
+                        @change="generateQRCode"
+                      />
+                      <span>单色</span>
+                    </label>
+                    <label class="radio-label">
+                      <input
+                        type="radio"
+                        v-model="qrConfig.cornersDotOptions.colorType"
+                        value="gradient"
+                        @change="generateQRCode"
+                      />
+                      <span>渐变</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="option-group">
+                  <label for="corners-dot-color">角点颜色</label>
+                  <input
+                    type="color"
+                    id="corners-dot-color"
+                    v-model="qrConfig.cornersDotOptions.color"
+                    @input="generateQRCode"
+                    class="color-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 背景选项 -->
+            <div class="qr-options-group">
+              <div class="group-header" @click="toggleGroup('background')">
+                <h3>背景选项</h3>
+                <span class="toggle-icon">{{ groups.background ? "▼" : "▶" }}</span>
+              </div>
+              <div v-if="groups.background" class="group-content">
+                <div class="option-group">
+                  <label>颜色类型</label>
+                  <div class="color-type-options">
+                    <label class="radio-label">
+                      <input
+                        type="radio"
+                        v-model="qrConfig.backgroundOptions.colorType"
+                        value="single"
+                        @change="generateQRCode"
+                      />
+                      <span>单色</span>
+                    </label>
+                    <label class="radio-label">
+                      <input
+                        type="radio"
+                        v-model="qrConfig.backgroundOptions.colorType"
+                        value="gradient"
+                        @change="generateQRCode"
+                      />
+                      <span>渐变</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="option-group">
+                  <label for="background-color">背景颜色</label>
+                  <input
+                    type="color"
+                    id="background-color"
+                    v-model="qrConfig.backgroundOptions.color"
+                    @input="generateQRCode"
+                    class="color-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 图片选项 -->
+            <div class="qr-options-group">
+              <div class="group-header" @click="toggleGroup('image')">
+                <h3>图片选项</h3>
+                <span class="toggle-icon">{{ groups.image ? "▼" : "▶" }}</span>
+              </div>
+              <div v-if="groups.image" class="group-content">
+                <div class="option-group checkbox-group">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      v-model="qrConfig.imageOptions.hideBackgroundDots"
+                      @change="generateQRCode"
+                    />
+                    <span>隐藏背景点</span>
+                  </label>
+                </div>
+                <div class="option-row">
+                  <div class="option-group">
+                    <label for="image-size">图片大小</label>
+                    <input
+                      type="range"
+                      id="image-size"
+                      v-model.number="qrConfig.imageOptions.imageSize"
+                      min="0.1"
+                      max="0.8"
+                      step="0.1"
+                      @input="generateQRCode"
+                    />
+                    <span>{{ qrConfig.imageOptions.imageSize.toFixed(1) }}</span>
+                  </div>
+                  <div class="option-group">
+                    <label for="image-margin">图片边距</label>
+                    <input
+                      type="number"
+                      id="image-margin"
+                      v-model.number="qrConfig.imageOptions.margin"
+                      min="0"
+                      max="20"
+                      step="1"
+                      @input="generateQRCode"
+                    />
+                    <span>px</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- QR选项 -->
+            <div class="qr-options-group">
+              <div class="group-header" @click="toggleGroup('qr')">
+                <h3>QR选项</h3>
+                <span class="toggle-icon">{{ groups.qr ? "▼" : "▶" }}</span>
+              </div>
+              <div v-if="groups.qr" class="group-content">
+                <div class="option-row">
+                  <div class="option-group">
+                    <label for="type-number">类型编号</label>
+                    <input
+                      type="number"
+                      id="type-number"
+                      v-model.number="qrConfig.qrOptions.typeNumber"
+                      min="0"
+                      max="40"
+                      step="1"
+                      @input="generateQRCode"
+                    />
+                  </div>
+                  <div class="option-group">
+                    <label for="qr-mode">模式</label>
+                    <custom-select
+                      v-model="qrConfig.qrOptions.mode"
+                      :options="qrModeOptions"
+                      @update:modelValue="generateQRCode"
+                    ></custom-select>
+                  </div>
+                </div>
+                <div class="option-group">
+                  <label for="error-correction">纠错级别</label>
+                  <custom-select
+                    v-model="qrConfig.qrOptions.errorCorrectionLevel"
+                    :options="errorCorrectionOptions"
+                    @update:modelValue="generateQRCode"
+                  ></custom-select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 导出选项 -->
+            <div class="qr-options-group">
+              <div class="group-header" @click="toggleGroup('export')">
+                <h3>导出选项</h3>
+                <span class="toggle-icon">{{ groups.export ? "▼" : "▶" }}</span>
+              </div>
+              <div v-if="groups.export" class="group-content">
+                <div class="option-group">
+                  <label for="download-format">下载格式</label>
+                  <custom-select v-model="downloadFormat" :options="downloadFormatOptions"></custom-select>
+                </div>
               </div>
             </div>
           </div>
 
+          <!-- 右侧：预览和操作 -->
           <div class="qr-result-section">
             <div class="qr-preview" ref="qrPreview"></div>
             <div class="qr-actions">
@@ -104,16 +444,93 @@ export default {
         },
       ],
       selectedToolId: "qr-code", // 默认选中URL转二维码工具
+      // 选项组折叠状态
+      groups: {
+        main: true,
+        dots: true,
+        cornersSquare: true,
+        cornersDot: true,
+        background: true,
+        image: true,
+        qr: true,
+        export: true,
+      },
+      // 下载格式选项
+      downloadFormatOptions: [
+        { value: "png", label: "PNG" },
+        { value: "jpeg", label: "JPEG" },
+      ],
+      // 样式选项
+      styleOptions: [
+        { value: "rounded", label: "圆角" },
+        { value: "dots", label: "圆点" },
+        { value: "classy", label: "优雅" },
+        { value: "classy-rounded", label: "优雅圆角" },
+        { value: "square", label: "方形" },
+        { value: "extra-rounded", label: "超圆角" },
+      ],
+      // 角点样式选项（包含none选项）
+      cornerDotStyleOptions: [
+        { value: "none", label: "无" },
+        { value: "dot", label: "圆点" },
+        { value: "square", label: "方形" },
+        { value: "rounded", label: "圆角" },
+        { value: "classy", label: "优雅" },
+        { value: "classy-rounded", label: "优雅圆角" },
+        { value: "extra-rounded", label: "超圆角" },
+      ],
+      // QR模式选项
+      qrModeOptions: [
+        { value: "Numeric", label: "数字" },
+        { value: "Alphanumeric", label: "字母数字" },
+        { value: "Byte", label: "字节" },
+        { value: "Kanji", label: "汉字" },
+      ],
       // URL转二维码相关配置
       urlInput: "https://example.com", // 默认URL示例
-      qrSize: 300,
-      errorCorrection: "Q",
-      errorCorrectionOptions: [
-        { value: "L", label: "低 (L)" },
-        { value: "M", label: "中 (M)" },
-        { value: "Q", label: "较高 (Q)" },
-        { value: "H", label: "高 (H)" },
-      ],
+      selectedImage: null,
+      downloadFormat: "png",
+      // 完整的二维码配置
+      qrConfig: {
+        width: 300,
+        height: 300,
+        margin: 0,
+        // 点选项
+        dotsOptions: {
+          color: "#000000",
+          type: "extra-rounded",
+          colorType: "single", // single or gradient
+        },
+        // 角方块选项
+        cornersSquareOptions: {
+          color: "#000000",
+          type: "extra-rounded",
+          colorType: "single",
+        },
+        // 角点选项
+        cornersDotOptions: {
+          color: "#000000",
+          type: "dot",
+          colorType: "single",
+        },
+        // 背景选项
+        backgroundOptions: {
+          color: "#ffffff",
+          colorType: "single",
+        },
+        // 图片选项
+        imageOptions: {
+          hideBackgroundDots: true,
+          imageSize: 0.4,
+          margin: 0,
+        },
+        // QR选项
+        qrOptions: {
+          typeNumber: 0,
+          mode: "Byte",
+          errorCorrectionLevel: "Q",
+        },
+      },
       qrCode: null,
     }
   },
@@ -121,6 +538,28 @@ export default {
     selectTool(toolId) {
       this.selectedToolId = toolId
     },
+    // 切换选项组折叠状态
+    toggleGroup(groupName) {
+      this.groups[groupName] = !this.groups[groupName]
+    },
+    // 处理图片上传
+    handleImageUpload(event) {
+      const file = event.target.files[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          this.selectedImage = e.target.result
+          this.generateQRCode()
+        }
+        reader.readAsDataURL(file)
+      }
+    },
+    // 清除上传的图片
+    clearImage() {
+      this.selectedImage = null
+      this.generateQRCode()
+    },
+    // 生成二维码
     generateQRCode() {
       if (!this.urlInput) {
         return
@@ -134,43 +573,40 @@ export default {
 
       // 创建新的二维码实例
       this.qrCode = new QRCodeStyling({
-        width: this.qrSize,
-        height: this.qrSize,
+        width: this.qrConfig.width,
+        height: this.qrConfig.height,
         type: "svg",
         data: this.urlInput,
-        qrOptions: {
-          errorCorrectionLevel: this.errorCorrection,
-        },
-        imageOptions: {
-          hideBackgroundDots: true,
-          imageSize: 0.4,
-          margin: 0,
-        },
+        image: this.selectedImage,
+        margin: this.qrConfig.margin,
+        qrOptions: this.qrConfig.qrOptions,
+        imageOptions: this.qrConfig.imageOptions,
         dotsOptions: {
-          color: "#000000",
-          type: "rounded",
+          color: this.qrConfig.dotsOptions.color,
+          type: this.qrConfig.dotsOptions.type,
         },
         backgroundOptions: {
-          color: "#ffffff",
+          color: this.qrConfig.backgroundOptions.color,
         },
         cornersSquareOptions: {
-          color: "#000000",
-          type: "extra-rounded",
+          color: this.qrConfig.cornersSquareOptions.color,
+          type: this.qrConfig.cornersSquareOptions.type,
         },
         cornersDotOptions: {
-          color: "#000000",
-          type: "dot",
+          color: this.qrConfig.cornersDotOptions.color,
+          type: this.qrConfig.cornersDotOptions.type,
         },
       })
 
       // 渲染二维码
       this.qrCode.append(preview)
     },
+    // 下载二维码
     downloadQRCode() {
       if (this.qrCode) {
         this.qrCode.download({
           name: "qrcode",
-          extension: "png",
+          extension: this.downloadFormat,
         })
       }
     },
@@ -309,19 +745,93 @@ export default {
   }
 }
 
-.qr-input-section {
+/* 配置选项部分 */
+.qr-config-section {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding-right: 1rem;
 }
 
-.qr-input-section label {
-  font-weight: 600;
+/* 选项组 */
+.qr-options-group {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+/* 分组标题 */
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--hover-bg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.group-header:hover {
+  background: var(--accent-color-hover);
+}
+
+.group-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
   color: var(--text-primary) !important;
   opacity: 1 !important;
 }
 
+.toggle-icon {
+  font-size: 0.8rem;
+  color: var(--text-secondary) !important;
+  opacity: 0.8 !important;
+  transition: transform 0.3s ease;
+}
+
+/* 分组内容 */
+.group-content {
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* 选项组内的选项 */
+.option-group {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.option-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.option-row .option-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.option-group:last-child {
+  margin-bottom: 0;
+}
+
+.option-group label {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text-primary) !important;
+  opacity: 1 !important;
+}
+
+/* 输入框样式 */
 .url-input {
   padding: 0.75rem 1rem;
   border: 2px solid var(--border-color);
@@ -331,6 +841,8 @@ export default {
   color: var(--text-primary) !important;
   opacity: 1 !important;
   transition: border-color 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .url-input:focus {
@@ -344,48 +856,144 @@ export default {
   opacity: 0.8 !important;
 }
 
-.qr-options {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.option-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.option-group label {
-  font-weight: 500;
+/* 数字输入框 */
+.option-group input[type="number"] {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
   font-size: 0.95rem;
+  background: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+  opacity: 1 !important;
+  transition: border-color 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+.option-group input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  background: var(--hover-bg) !important;
+}
+
+/* 滑块样式 */
 .option-group input[type="range"] {
   width: 100%;
   accent-color: var(--accent-color);
 }
 
-.option-group select {
-  padding: 0.5rem;
+/* 颜色选择器 */
+.color-input {
+  width: 100%;
+  height: 40px;
   border: 2px solid var(--border-color);
   border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
+}
+
+/* 单选按钮样式 */
+.color-type-options {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 400 !important;
+}
+
+.radio-label input[type="radio"] {
+  accent-color: var(--accent-color);
+}
+
+.radio-label span {
+  color: var(--text-primary) !important;
+  opacity: 1 !important;
+}
+
+/* 复选框样式 */
+.checkbox-group {
+  margin-bottom: 1.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 400 !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  accent-color: var(--accent-color);
+}
+
+.checkbox-label span {
+  color: var(--text-primary) !important;
+  opacity: 1 !important;
+}
+
+/* 图片上传 */
+.image-upload {
+  padding: 0.75rem 1rem;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
   background: var(--card-bg) !important;
   color: var(--text-primary) !important;
   opacity: 1 !important;
-  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.option-group select:focus {
-  outline: none;
+.image-upload:hover {
   border-color: var(--accent-color);
+  background: var(--hover-bg) !important;
 }
 
-.option-group span {
-  color: var(--text-primary) !important;
-  opacity: 0.9 !important;
+/* 清除按钮 */
+.clear-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
   font-size: 0.9rem;
-  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 1 !important;
+}
+
+.clear-btn:hover {
+  background: var(--accent-color-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+/* 滚动条样式 */
+.qr-config-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.qr-config-section::-webkit-scrollbar-track {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.qr-config-section::-webkit-scrollbar-thumb {
+  background: var(--text-secondary);
+  border-radius: 3px;
+}
+
+.qr-config-section::-webkit-scrollbar-thumb:hover {
+  background: var(--text-primary);
 }
 
 .qr-result-section {
