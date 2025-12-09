@@ -1,5 +1,5 @@
 <template>
-  <div class="custom-select-container">
+  <div class="custom-select-container" :class="{ open: isOpen }">
     <div
       class="custom-select-header"
       @click="toggleDropdown"
@@ -27,7 +27,7 @@
       </svg>
     </div>
 
-    <ul v-if="isOpen" class="custom-select-options" ref="optionsList" :style="optionsStyle">
+    <ul v-show="isOpen" class="custom-select-options" ref="optionsList">
       <li
         v-for="(option, index) in options"
         :key="option.value"
@@ -75,7 +75,6 @@ export default {
     const focusedIndex = ref(-1)
     const selectHeader = ref(null)
     const optionsList = ref(null)
-    const headerRect = ref(null)
 
     // 计算当前选中的选项文本
     const selectedOptionText = computed(() => {
@@ -91,37 +90,12 @@ export default {
       },
     })
 
-    // 计算下拉列表的样式
-    const optionsStyle = computed(() => {
-      if (!headerRect.value) return {}
-
-      return {
-        position: "fixed",
-        top: `${headerRect.value.top + headerRect.value.height + window.scrollY}px`,
-        left: `${headerRect.value.left + window.scrollX}px`,
-        width: `${headerRect.value.width}px`,
-        zIndex: "2000",
-        maxHeight: "200px",
-        overflowY: "auto",
-      }
-    })
-
     // 切换下拉列表的显示状态
     const toggleDropdown = () => {
       isOpen.value = !isOpen.value
       if (isOpen.value) {
-        // 更新下拉列表位置
-        if (selectHeader.value) {
-          headerRect.value = selectHeader.value.getBoundingClientRect()
-        }
-        // 设置焦点到第一个选项
+        // 只设置焦点索引，不自动聚焦到第一个选项，避免页面滚动
         focusedIndex.value = 0
-        // 等待DOM更新后设置焦点
-        setTimeout(() => {
-          if (optionsList.value && optionsList.value.children.length > 0) {
-            optionsList.value.children[0].focus()
-          }
-        }, 0)
       } else {
         focusedIndex.value = -1
         selectHeader.value.focus()
@@ -208,7 +182,6 @@ export default {
       selectOption,
       focusNextOption,
       focusPreviousOption,
-      optionsStyle,
     }
   },
 }
@@ -252,11 +225,15 @@ export default {
   color: var(--text-secondary);
 }
 
-.custom-select-container:has(.custom-select-options) .dropdown-arrow {
+.custom-select-container.open .dropdown-arrow {
   transform: rotate(180deg);
 }
 
 .custom-select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   margin-top: 0.5rem;
   padding: 0.5rem 0;
   border: 2px solid var(--border-color);
@@ -265,6 +242,10 @@ export default {
   box-shadow: 0 4px 12px var(--shadow-color);
   list-style: none;
   box-sizing: border-box;
+  z-index: 2000;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 100%;
 }
 
 .option-item {
