@@ -55,12 +55,11 @@
               </div>
               <div class="option-group">
                 <label for="error-correction">纠错级别</label>
-                <select id="error-correction" v-model="errorCorrection" @change="generateQRCode">
-                  <option value="L">低 (L)</option>
-                  <option value="M">中 (M)</option>
-                  <option value="Q">较高 (Q)</option>
-                  <option value="H">高 (H)</option>
-                </select>
+                <custom-select
+                  v-model="errorCorrection"
+                  :options="errorCorrectionOptions"
+                  @update:modelValue="generateQRCode"
+                ></custom-select>
               </div>
             </div>
           </div>
@@ -86,9 +85,13 @@
 
 <script>
 import QRCodeStyling from "qr-code-styling"
+import CustomSelect from "../components/CustomSelect.vue"
 
 export default {
   name: "ToolsView",
+  components: {
+    CustomSelect,
+  },
   data() {
     return {
       // 工具列表
@@ -105,6 +108,12 @@ export default {
       urlInput: "https://example.com", // 默认URL示例
       qrSize: 300,
       errorCorrection: "Q",
+      errorCorrectionOptions: [
+        { value: "L", label: "低 (L)" },
+        { value: "M", label: "中 (M)" },
+        { value: "Q", label: "较高 (Q)" },
+        { value: "H", label: "高 (H)" },
+      ],
       qrCode: null,
     }
   },
