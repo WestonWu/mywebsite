@@ -43,7 +43,7 @@
 <script>
 import DOMParticle from "./components/DOMParticle.vue"
 import RainEffect from "./components/RainEffect.vue"
-import Navbar from "./components/Navbar.vue"
+import Navbar from "./components/NavBar.vue"
 import { ref, provide } from "vue"
 
 export default {
