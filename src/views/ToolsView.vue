@@ -106,6 +106,34 @@ export default {
           icon: "📊",
           category: "text",
         },
+        {
+          id: "base64",
+          name: "Base64编码/解码",
+          description: "Base64编码和解码工具",
+          icon: "🔢",
+          category: "encoding",
+        },
+        {
+          id: "url-encode",
+          name: "URL编码/解码",
+          description: "URL编码和解码工具",
+          icon: "🔗",
+          category: "encoding",
+        },
+        {
+          id: "timestamp",
+          name: "时间戳转换",
+          description: "时间戳与日期时间的相互转换",
+          icon: "⏰",
+          category: "date",
+        },
+        {
+          id: "countdown",
+          name: "倒计时生成器",
+          description: "生成指定日期的倒计时",
+          icon: "⏳",
+          category: "date",
+        },
       ],
       selectedToolId: "qr-code", // 默认选中URL转二维码工具
       selectedCategory: "all", // 默认显示全部工具
@@ -116,6 +144,10 @@ export default {
         "qr-code": defineAsyncComponent(() => import("../components/tools/ToolQrCode.vue")),
         "text-case": defineAsyncComponent(() => import("../components/tools/ToolTextCase.vue")),
         "word-counter": defineAsyncComponent(() => import("../components/tools/ToolWordCounter.vue")),
+        base64: defineAsyncComponent(() => import("../components/tools/ToolBase64.vue")),
+        "url-encode": defineAsyncComponent(() => import("../components/tools/ToolUrlEncode.vue")),
+        timestamp: defineAsyncComponent(() => import("../components/tools/ToolTimestamp.vue")),
+        countdown: defineAsyncComponent(() => import("../components/tools/ToolCountdown.vue")),
       },
     }
   },
