@@ -1,14 +1,11 @@
 <template>
-  <div class="custom-select-container" :class="{ open: isOpen }">
+  <div class="custom-select-container" :class="{ open: isOpen }" ref="selectContainer">
     <div
       class="custom-select-header"
       @click="toggleDropdown"
-      ref="selectHeader"
       tabindex="0"
       @keydown.enter="toggleDropdown"
       @keydown.space="toggleDropdown"
-      @keydown.arrow-down="focusNextOption"
-      @keydown.arrow-up="focusPreviousOption"
     >
       <span class="selected-option">{{ selectedOptionText }}</span>
       <svg
@@ -27,19 +24,13 @@
       </svg>
     </div>
 
-    <ul v-show="isOpen" class="custom-select-options" ref="optionsList" :style="dropdownStyle">
+    <ul v-if="isOpen" class="custom-select-options">
       <li
         v-for="(option, index) in options"
         :key="option.value"
         class="option-item"
-        :class="{ selected: option.value === selectedValue, focused: focusedIndex === index }"
+        :class="{ selected: option.value === selectedValue }"
         @click="selectOption(option)"
-        @mouseenter="focusedIndex = index"
-        tabindex="0"
-        @keydown.enter="selectOption(option)"
-        @keydown.space="selectOption(option)"
-        @keydown.arrow-down="focusNextOption(index)"
-        @keydown.arrow-up="focusPreviousOption(index)"
       >
         {{ option.label }}
       </li>
@@ -48,7 +39,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted, watch } from "vue"
+import { ref, computed, onMounted, onUnmounted } from "vue"
 
 export default {
   name: "CustomSelect",
@@ -72,18 +63,8 @@ export default {
   emits: ["update:modelValue"],
   setup(props, { emit }) {
     const isOpen = ref(false)
-    const focusedIndex = ref(-1)
-    const selectHeader = ref(null)
-    const optionsList = ref(null)
-    const dropdownStyle = ref({})
-
-    // 计算当前选中的选项文本
-    const selectedOptionText = computed(() => {
-      const selectedOption = props.options.find((option) => option.value === props.modelValue)
-      return selectedOption ? selectedOption.label : props.placeholder
-    })
-
-    // 计算当前选中的选项值
+    const selectContainer = ref(null)
+    const dropdownElement = ref(null)
     const selectedValue = computed({
       get: () => props.modelValue,
       set: (value) => {
@@ -91,128 +72,55 @@ export default {
       },
     })
 
-    // 计算下拉列表的样式
-    const updateDropdownPosition = () => {
-      if (!selectHeader.value || !isOpen.value) return
-
-      const headerRect = selectHeader.value.getBoundingClientRect()
-      const containerRect = selectHeader.value.parentElement.getBoundingClientRect()
-
-      dropdownStyle.value = {
-        position: "fixed",
-        left: `${headerRect.left}px`,
-        top: `${headerRect.bottom + window.scrollY}px`,
-        width: `${headerRect.width}px`,
-        zIndex: 2000,
-      }
-    }
+    // 计算当前选中的选项文本
+    const selectedOptionText = computed(() => {
+      const selectedOption = props.options.find((option) => option.value === props.modelValue)
+      return selectedOption ? selectedOption.label : props.placeholder
+    })
 
     // 切换下拉列表的显示状态
     const toggleDropdown = () => {
       isOpen.value = !isOpen.value
-      if (isOpen.value) {
-        // 只设置焦点索引，不自动聚焦到第一个选项，避免页面滚动
-        focusedIndex.value = 0
-        // 更新下拉列表位置
-        updateDropdownPosition()
-      } else {
-        focusedIndex.value = -1
-        selectHeader.value.focus()
-      }
     }
-
-    // 监听窗口大小变化，更新下拉列表位置
-    watch(isOpen, (newVal) => {
-      if (newVal) {
-        updateDropdownPosition()
-        window.addEventListener("resize", updateDropdownPosition)
-      } else {
-        window.removeEventListener("resize", updateDropdownPosition)
-      }
-    })
 
     // 选择选项
     const selectOption = (option) => {
       selectedValue.value = option.value
       isOpen.value = false
-      focusedIndex.value = -1
-      selectHeader.value.focus()
-    }
-
-    // 聚焦到下一个选项
-    const focusNextOption = (currentIndex = focusedIndex.value) => {
-      if (!isOpen.value) {
-        toggleDropdown()
-        return
-      }
-
-      const nextIndex = currentIndex + 1
-      if (nextIndex < props.options.length) {
-        focusedIndex.value = nextIndex
-        // 等待DOM更新后滚动到可见区域
-        setTimeout(() => {
-          if (optionsList.value && optionsList.value.children[nextIndex]) {
-            optionsList.value.children[nextIndex].focus()
-          }
-        }, 0)
-      }
-    }
-
-    // 聚焦到上一个选项
-    const focusPreviousOption = (currentIndex = focusedIndex.value) => {
-      if (!isOpen.value) {
-        toggleDropdown()
-        return
-      }
-
-      const prevIndex = currentIndex - 1
-      if (prevIndex >= 0) {
-        focusedIndex.value = prevIndex
-        // 等待DOM更新后滚动到可见区域
-        setTimeout(() => {
-          if (optionsList.value && optionsList.value.children[prevIndex]) {
-            optionsList.value.children[prevIndex].focus()
-          }
-        }, 0)
-      }
     }
 
     // 点击外部关闭下拉列表
     const handleClickOutside = (event) => {
-      if (
-        selectHeader.value &&
-        !selectHeader.value.contains(event.target) &&
-        optionsList.value &&
-        !optionsList.value.contains(event.target)
-      ) {
-        isOpen.value = false
-        focusedIndex.value = -1
+      // 只有当下拉列表是打开状态时，才需要处理点击外部关闭
+      if (isOpen.value) {
+        // 检查点击事件是否发生在选择容器内部或下拉菜单内部
+        const isClickInside = selectContainer.value && selectContainer.value.contains(event.target)
+        if (!isClickInside) {
+          // 关闭下拉列表
+          isOpen.value = false
+        }
       }
     }
 
     // 添加事件监听器
     onMounted(() => {
-      document.addEventListener("click", handleClickOutside)
+      // 使用捕获阶段监听，确保在事件冒泡前处理
+      document.addEventListener("click", handleClickOutside, true)
     })
 
     // 移除事件监听器
     onUnmounted(() => {
-      document.removeEventListener("click", handleClickOutside)
-      window.removeEventListener("resize", updateDropdownPosition)
+      document.removeEventListener("click", handleClickOutside, true)
     })
 
     return {
       isOpen,
-      focusedIndex,
-      selectHeader,
-      optionsList,
+      selectContainer,
+      dropdownElement,
       selectedOptionText,
       selectedValue,
       toggleDropdown,
       selectOption,
-      focusNextOption,
-      focusPreviousOption,
-      dropdownStyle,
     }
   },
 }
@@ -261,16 +169,21 @@ export default {
 }
 
 .custom-select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
   margin-top: 0.5rem;
   padding: 0.5rem 0;
   border: 2px solid var(--border-color);
   border-radius: 8px;
-  background-color: var(--card-bg);
+  background-color: var(--secondary-bg);
   box-shadow: 0 4px 12px var(--shadow-color);
   list-style: none;
   box-sizing: border-box;
   max-height: 200px;
   overflow-y: auto;
+  z-index: 2000;
 }
 
 .option-item {
