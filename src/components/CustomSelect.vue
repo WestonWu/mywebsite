@@ -27,7 +27,7 @@
       </svg>
     </div>
 
-    <ul v-show="isOpen" class="custom-select-options" ref="optionsList">
+    <ul v-show="isOpen" class="custom-select-options" ref="optionsList" :style="dropdownStyle">
       <li
         v-for="(option, index) in options"
         :key="option.value"
@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted } from "vue"
+import { ref, computed, onMounted, onUnmounted, watch } from "vue"
 
 export default {
   name: "CustomSelect",
@@ -75,6 +75,7 @@ export default {
     const focusedIndex = ref(-1)
     const selectHeader = ref(null)
     const optionsList = ref(null)
+    const dropdownStyle = ref({})
 
     // 计算当前选中的选项文本
     const selectedOptionText = computed(() => {
@@ -90,17 +91,45 @@ export default {
       },
     })
 
+    // 计算下拉列表的样式
+    const updateDropdownPosition = () => {
+      if (!selectHeader.value || !isOpen.value) return
+
+      const headerRect = selectHeader.value.getBoundingClientRect()
+      const containerRect = selectHeader.value.parentElement.getBoundingClientRect()
+
+      dropdownStyle.value = {
+        position: "fixed",
+        left: `${headerRect.left}px`,
+        top: `${headerRect.bottom + window.scrollY}px`,
+        width: `${headerRect.width}px`,
+        zIndex: 2000,
+      }
+    }
+
     // 切换下拉列表的显示状态
     const toggleDropdown = () => {
       isOpen.value = !isOpen.value
       if (isOpen.value) {
         // 只设置焦点索引，不自动聚焦到第一个选项，避免页面滚动
         focusedIndex.value = 0
+        // 更新下拉列表位置
+        updateDropdownPosition()
       } else {
         focusedIndex.value = -1
         selectHeader.value.focus()
       }
     }
+
+    // 监听窗口大小变化，更新下拉列表位置
+    watch(isOpen, (newVal) => {
+      if (newVal) {
+        updateDropdownPosition()
+        window.addEventListener("resize", updateDropdownPosition)
+      } else {
+        window.removeEventListener("resize", updateDropdownPosition)
+      }
+    })
 
     // 选择选项
     const selectOption = (option) => {
@@ -169,6 +198,7 @@ export default {
     // 移除事件监听器
     onUnmounted(() => {
       document.removeEventListener("click", handleClickOutside)
+      window.removeEventListener("resize", updateDropdownPosition)
     })
 
     return {
@@ -182,6 +212,7 @@ export default {
       selectOption,
       focusNextOption,
       focusPreviousOption,
+      dropdownStyle,
     }
   },
 }
@@ -230,10 +261,6 @@ export default {
 }
 
 .custom-select-options {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
   margin-top: 0.5rem;
   padding: 0.5rem 0;
   border: 2px solid var(--border-color);
@@ -242,10 +269,8 @@ export default {
   box-shadow: 0 4px 12px var(--shadow-color);
   list-style: none;
   box-sizing: border-box;
-  z-index: 2000;
   max-height: 200px;
   overflow-y: auto;
-  width: 100%;
 }
 
 .option-item {
