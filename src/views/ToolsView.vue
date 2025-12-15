@@ -93,7 +93,7 @@
 </template>
 
 <script>
-import { defineAsyncComponent, onMounted, ref, computed } from "vue"
+import { defineAsyncComponent, onMounted, ref, computed, shallowRef } from "vue"
 import CustomSelect from "../components/CustomSelect.vue"
 import HelpModal from "../components/HelpModal.vue"
 import { useToolFavorites } from "../composables/useToolFavorites"
@@ -105,6 +105,30 @@ export default {
     HelpModal,
   },
   setup() {
+    // 定义异步组件映射（在setup中定义，避免被转换为响应式对象）
+    const toolComponents = {
+      "qr-code": defineAsyncComponent(() => import("../components/tools/ToolQrCode.vue")),
+      "text-case": defineAsyncComponent(() => import("../components/tools/ToolTextCase.vue")),
+      "word-counter": defineAsyncComponent(() => import("../components/tools/ToolWordCounter.vue")),
+      base64: defineAsyncComponent(() => import("../components/tools/ToolBase64.vue")),
+      "url-encode": defineAsyncComponent(() => import("../components/tools/ToolUrlEncode.vue")),
+      timestamp: defineAsyncComponent(() => import("../components/tools/ToolTimestamp.vue")),
+      countdown: defineAsyncComponent(() => import("../components/tools/ToolCountdown.vue")),
+      "color-converter": defineAsyncComponent(() => import("../components/tools/ToolColorConverter.vue")),
+      "color-gradient": defineAsyncComponent(() => import("../components/tools/ToolColorGradient.vue")),
+      "unit-converter": defineAsyncComponent(() => import("../components/tools/ToolUnitConverter.vue")),
+      // 天气工具组件
+      "weather-current": defineAsyncComponent(() => import("../components/tools/ToolWeatherCurrent.vue")),
+      "weather-forecast": defineAsyncComponent(() => import("../components/tools/ToolWeatherForecast.vue")),
+      "sunrise-sunset": defineAsyncComponent(() => import("../components/tools/ToolSunriseSunset.vue")),
+      "air-quality": defineAsyncComponent(() => import("../components/tools/ToolAirQuality.vue")),
+      "uv-index": defineAsyncComponent(() => import("../components/tools/ToolUVIndex.vue")),
+      "feels-like": defineAsyncComponent(() => import("../components/tools/ToolFeelsLike.vue")),
+      "precipitation-conversion": defineAsyncComponent(() =>
+        import("../components/tools/ToolPrecipitationConversion.vue")
+      ),
+    }
+
     const { getFavorites, addFavorite, removeFavorite, getRecentUsage, addToRecent } = useToolFavorites()
 
     // 创建响应式收藏列表
@@ -132,12 +156,17 @@ export default {
       }
     }
 
+    // 使用shallowRef避免将组件对象转换为响应式对象
+    const preloadedComponents = shallowRef({})
+
     return {
+      toolComponents,
       favorites,
       isFavorite,
       toggleFavorite,
       getRecentUsage,
       addToRecent,
+      preloadedComponents,
     }
   },
   data() {
@@ -152,6 +181,7 @@ export default {
         { id: "date", name: "日期工具", icon: "📅" },
         { id: "color", name: "颜色工具", icon: "🎨" },
         { id: "converter", name: "转换工具", icon: "🔄" },
+        { id: "weather", name: "天气工具", icon: "🌤️" },
       ],
       // 工具列表
       tools: [
@@ -225,27 +255,61 @@ export default {
           icon: "📏",
           category: "converter",
         },
+        // 天气工具
+        {
+          id: "weather-current",
+          name: "实时天气查询",
+          description: "查询全球城市实时天气，显示温度、湿度、风速等数据",
+          icon: "🌡️",
+          category: "weather",
+        },
+        {
+          id: "weather-forecast",
+          name: "天气预报",
+          description: "查看未来7天天气预报和天气趋势",
+          icon: "📅",
+          category: "weather",
+        },
+        {
+          id: "sunrise-sunset",
+          name: "日出日落时间",
+          description: "查询全球各地日出日落和日照时长",
+          icon: "🌅",
+          category: "weather",
+        },
+        {
+          id: "air-quality",
+          name: "空气质量查询",
+          description: "查看城市空气质量指数和污染物浓度",
+          icon: "💨",
+          category: "weather",
+        },
+        {
+          id: "uv-index",
+          name: "紫外线指数",
+          description: "查询实时紫外线强度和防晒建议",
+          icon: "☀️",
+          category: "weather",
+        },
+        {
+          id: "feels-like",
+          name: "体感温度计算",
+          description: "根据温度、湿度、风速计算体感温度",
+          icon: "😓",
+          category: "weather",
+        },
+        {
+          id: "precipitation-conversion",
+          name: "降水量转换",
+          description: "毫米与英寸降水量单位转换",
+          icon: "💧",
+          category: "weather",
+        },
       ],
       selectedToolId: "qr-code", // 默认选中URL转二维码工具
       selectedCategory: "all", // 默认显示全部工具
       searchQuery: "", // 搜索查询
       showModal: false, // 模态框显示状态
-      // 动态组件映射
-      toolComponents: {
-        "qr-code": defineAsyncComponent(() => import("../components/tools/ToolQrCode.vue")),
-        "text-case": defineAsyncComponent(() => import("../components/tools/ToolTextCase.vue")),
-        "word-counter": defineAsyncComponent(() => import("../components/tools/ToolWordCounter.vue")),
-        base64: defineAsyncComponent(() => import("../components/tools/ToolBase64.vue")),
-        "url-encode": defineAsyncComponent(() => import("../components/tools/ToolUrlEncode.vue")),
-        timestamp: defineAsyncComponent(() => import("../components/tools/ToolTimestamp.vue")),
-        countdown: defineAsyncComponent(() => import("../components/tools/ToolCountdown.vue")),
-        "color-converter": defineAsyncComponent(() => import("../components/tools/ToolColorConverter.vue")),
-        "color-gradient": defineAsyncComponent(() => import("../components/tools/ToolColorGradient.vue")),
-        "unit-converter": defineAsyncComponent(() => import("../components/tools/ToolUnitConverter.vue")),
-      },
-      // 预加载的组件缓存
-      preloadedComponents: {},
-
       // 帮助模态框相关
       helpModalVisible: false,
       currentHelpContent: {
@@ -412,6 +476,117 @@ export default {
           ],
           tips: ["支持多种单位类型的转换", "可以通过常用转换快捷方式快速转换", "转换结果将自动保存到历史记录"],
         },
+        "weather-current": {
+          title: "实时天气查询工具帮助",
+          description: "查询全球城市实时天气，显示温度、湿度、风速等详细数据。",
+          usageSteps: [
+            "在搜索框中输入城市名称或选择当前位置",
+            "系统将自动获取并显示该城市的实时天气信息",
+            "可以点击温度单位切换按钮在摄氏度、华氏度和开尔文之间切换",
+            "查看详细的天气数据，包括湿度、风速、气压等",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速查询天气" },
+            { key: "Ctrl + L", description: "使用当前位置" },
+          ],
+          tips: ["支持全球大部分城市的天气查询", "数据每30分钟自动更新", "可以添加常用城市到收藏列表"],
+        },
+        "weather-forecast": {
+          title: "天气预报工具帮助",
+          description: "查看未来7天天气预报和天气趋势，包括温度变化、降水概率等。",
+          usageSteps: [
+            "在搜索框中输入城市名称或选择当前位置",
+            "查看未来7天的天气预报信息",
+            "可以点击具体日期查看该天的详细天气数据",
+            "观察天气趋势图了解温度和降水变化",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速获取预报" },
+            { key: "Ctrl + L", description: "使用当前位置" },
+          ],
+          tips: ["预报数据每小时更新一次", "可以查看日出日落时间", "降水概率显示当天可能的降雨情况"],
+        },
+        "sunrise-sunset": {
+          title: "日出日落时间工具帮助",
+          description: "查询全球各地日出日落时间和日照时长，带有可视化太阳路径。",
+          usageSteps: [
+            "在搜索框中输入城市名称或选择当前位置",
+            "系统将显示该地点的日出日落时间和日照时长",
+            "查看可视化的太阳路径动画，了解太阳在天空中的移动轨迹",
+            "可以切换日期查看不同日期的日出日落时间",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速查询" },
+            { key: "Ctrl + L", description: "使用当前位置" },
+          ],
+          tips: ["数据基于地理位置精确计算", "支持查看历史日期的日出日落时间", "可以比较不同地点的日照时长"],
+        },
+        "air-quality": {
+          title: "空气质量查询工具帮助",
+          description: "查看城市空气质量指数和污染物浓度，提供健康建议。",
+          usageSteps: [
+            "在搜索框中输入城市名称或选择当前位置",
+            "查看空气质量指数(AQI)和主要污染物信息",
+            "了解各项污染物的浓度和健康影响",
+            "查看针对当前空气质量的健康建议",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速查询" },
+            { key: "Ctrl + L", description: "使用当前位置" },
+          ],
+          tips: ["AQI数值越高表示污染越严重", "提供不同人群的健康建议", "数据每小时更新一次"],
+        },
+        "uv-index": {
+          title: "紫外线指数工具帮助",
+          description: "查询实时紫外线强度和防晒建议，保护您的皮肤健康。",
+          usageSteps: [
+            "在搜索框中输入城市名称或选择当前位置",
+            "查看当前紫外线指数和强度等级",
+            "了解针对当前UV指数的防晒建议",
+            "可以查看全天UV指数变化趋势",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速查询" },
+            { key: "Ctrl + L", description: "使用当前位置" },
+          ],
+          tips: ["UV指数在中午前后最高", "即使阴天也需要注意防晒", "建议根据UV指数选择合适的防晒措施"],
+        },
+        "feels-like": {
+          title: "体感温度计算工具帮助",
+          description: "根据温度、湿度、风速计算体感温度，了解实际感受的温度。",
+          usageSteps: [
+            "输入当前温度值",
+            "输入相对湿度百分比",
+            "输入风速值",
+            "系统将自动计算并显示体感温度",
+            "可以切换温度单位查看不同单位下的体感温度",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速计算" },
+            { key: "Ctrl + U", description: "切换温度单位" },
+          ],
+          tips: [
+            "体感温度考虑了多种因素对人体感受的影响",
+            "高湿度会使体感温度高于实际温度",
+            "大风天气会使体感温度低于实际温度",
+          ],
+        },
+        "precipitation-conversion": {
+          title: "降水量转换工具帮助",
+          description: "在毫米(mm)和英寸(in)之间转换降水量单位，提供降水等级参考。",
+          usageSteps: [
+            "在输入框中输入降水量数值",
+            "选择输入单位(mm或in)",
+            "系统将自动转换为另一种单位",
+            "查看转换结果和对应的降水等级",
+            "可以点击交换按钮快速切换输入输出单位",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速转换" },
+            { key: "Ctrl + S", description: "交换单位" },
+          ],
+          tips: ["支持小数和整数输入", "提供不同降水等级的参考标准", "转换结果精确到小数点后两位"],
+        },
       },
     }
   },
@@ -483,12 +658,10 @@ export default {
       }
 
       // 获取组件配置
-      const componentConfig = this.toolComponents[toolId]
-      if (componentConfig) {
-        // 预加载组件
-        componentConfig().then((component) => {
-          this.preloadedComponents[toolId] = component
-        })
+      const component = this.toolComponents[toolId]
+      if (component) {
+        // 直接使用组件，不再调用它（因为它已经是一个异步组件，不是函数）
+        this.preloadedComponents[toolId] = component
       }
     },
     // 打开工具模态框
