@@ -34,8 +34,19 @@
         :key="tool.id"
         :class="['tool-card', { active: selectedToolId === tool.id }]"
         @click="openToolModal(tool.id)"
+        @mouseenter="preloadToolComponent(tool.id)"
       >
-        <div class="tool-icon">{{ tool.icon }}</div>
+        <div class="tool-header">
+          <div class="tool-icon">{{ tool.icon }}</div>
+          <button
+            class="favorite-btn"
+            :class="{ active: isFavorite(tool.id) }"
+            @click.stop="toggleFavorite(tool.id)"
+            :title="isFavorite(tool.id) ? '取消收藏' : '添加收藏'"
+          >
+            ⭐
+          </button>
+        </div>
         <h3>{{ tool.name }}</h3>
         <p>{{ tool.description }}</p>
       </div>
@@ -52,31 +63,90 @@
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h2>{{ selectedToolId ? tools.find((tool) => tool.id === selectedToolId)?.name : "工具" }}</h2>
-          <button class="modal-close" @click="closeToolModal">✕</button>
+          <div class="modal-actions">
+            <button class="help-btn" @click="openToolHelp(selectedToolId)" title="工具帮助">?</button>
+            <button class="modal-close" @click="closeToolModal" title="关闭">✕</button>
+          </div>
         </div>
         <div class="modal-body">
           <!-- 动态工具组件 -->
           <component :is="currentToolComponent" v-if="currentToolComponent"></component>
+          <!-- 加载状态 -->
+          <div v-else class="tool-loading">
+            <div class="loading-spinner"></div>
+            <p>工具加载中...</p>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- 帮助模态框 -->
+    <HelpModal
+      v-model:visible="helpModalVisible"
+      :title="currentHelpContent.title"
+      :description="currentHelpContent.description"
+      :usage-steps="currentHelpContent.usageSteps"
+      :shortcuts="currentHelpContent.shortcuts"
+      :tips="currentHelpContent.tips"
+    />
   </div>
 </template>
 
 <script>
-import { defineAsyncComponent, onMounted } from "vue"
+import { defineAsyncComponent, onMounted, ref, computed } from "vue"
 import CustomSelect from "../components/CustomSelect.vue"
+import HelpModal from "../components/HelpModal.vue"
+import { useToolFavorites } from "../composables/useToolFavorites"
 
 export default {
   name: "ToolsView",
   components: {
     CustomSelect,
+    HelpModal,
+  },
+  setup() {
+    const { getFavorites, addFavorite, removeFavorite, getRecentUsage, addToRecent } = useToolFavorites()
+
+    // 创建响应式收藏列表
+    const favorites = ref(getFavorites())
+
+    // 响应式的isFavorite方法
+    const isFavorite = (toolId) => {
+      return favorites.value.includes(toolId)
+    }
+
+    // 响应式的toggleFavorite方法
+    const toggleFavorite = (toolId) => {
+      const wasFavorite = favorites.value.includes(toolId)
+
+      if (wasFavorite) {
+        // 移除收藏
+        favorites.value = favorites.value.filter((id) => id !== toolId)
+        removeFavorite(toolId)
+        return false
+      } else {
+        // 添加收藏
+        favorites.value.push(toolId)
+        addFavorite(toolId)
+        return true
+      }
+    }
+
+    return {
+      favorites,
+      isFavorite,
+      toggleFavorite,
+      getRecentUsage,
+      addToRecent,
+    }
   },
   data() {
     return {
       // 分类列表
       categories: [
         { id: "all", name: "全部", icon: "🔍" },
+        { id: "recent", name: "最近使用", icon: "⏰" },
+        { id: "favorites", name: "我的收藏", icon: "⭐" },
         { id: "text", name: "文本工具", icon: "📝" },
         { id: "encoding", name: "编码工具", icon: "🔢" },
         { id: "date", name: "日期工具", icon: "📅" },
@@ -134,6 +204,27 @@ export default {
           icon: "⏳",
           category: "date",
         },
+        {
+          id: "color-converter",
+          name: "RGB/Hex颜色转换",
+          description: "RGB与Hex颜色值之间的相互转换",
+          icon: "🎨",
+          category: "color",
+        },
+        {
+          id: "color-gradient",
+          name: "颜色渐变生成",
+          description: "生成CSS和SVG渐变代码",
+          icon: "🌈",
+          category: "color",
+        },
+        {
+          id: "unit-converter",
+          name: "单位转换",
+          description: "支持长度、重量、温度等多种单位转换",
+          icon: "📏",
+          category: "converter",
+        },
       ],
       selectedToolId: "qr-code", // 默认选中URL转二维码工具
       selectedCategory: "all", // 默认显示全部工具
@@ -148,6 +239,179 @@ export default {
         "url-encode": defineAsyncComponent(() => import("../components/tools/ToolUrlEncode.vue")),
         timestamp: defineAsyncComponent(() => import("../components/tools/ToolTimestamp.vue")),
         countdown: defineAsyncComponent(() => import("../components/tools/ToolCountdown.vue")),
+        "color-converter": defineAsyncComponent(() => import("../components/tools/ToolColorConverter.vue")),
+        "color-gradient": defineAsyncComponent(() => import("../components/tools/ToolColorGradient.vue")),
+        "unit-converter": defineAsyncComponent(() => import("../components/tools/ToolUnitConverter.vue")),
+      },
+      // 预加载的组件缓存
+      preloadedComponents: {},
+
+      // 帮助模态框相关
+      helpModalVisible: false,
+      currentHelpContent: {
+        title: "",
+        description: "",
+        usageSteps: [],
+        shortcuts: [],
+        tips: [],
+      },
+      // 工具帮助内容
+      toolHelpContents: {
+        "qr-code": {
+          title: "URL 转二维码工具帮助",
+          description: "将网址转换为可下载的二维码图片，支持自定义尺寸、颜色和边距等参数。",
+          usageSteps: [
+            "在输入框中输入或粘贴要转换的URL地址",
+            "根据需要调整二维码的尺寸、颜色和边距等参数",
+            "点击生成按钮生成二维码",
+            "点击下载按钮保存二维码图片到本地",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速生成二维码" },
+            { key: "Ctrl + D", description: "下载当前二维码" },
+          ],
+          tips: [
+            "生成的二维码支持多种格式下载，包括PNG、JPEG和SVG",
+            "可以通过URL参数分享当前的二维码配置",
+            "较大尺寸的二维码可能需要更长的生成时间",
+          ],
+        },
+        "text-case": {
+          title: "文本转大小写工具帮助",
+          description: "将文本转换为大写、小写或首字母大写等不同格式。",
+          usageSteps: [
+            "在左侧输入框中输入或粘贴要转换的文本",
+            "选择要转换的格式（大写、小写、首字母大写等）",
+            "转换结果将自动显示在右侧输出框中",
+            "可以点击复制按钮复制转换结果",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速转换文本" },
+            { key: "Ctrl + C", description: "复制转换结果" },
+          ],
+          tips: ["支持批量转换大量文本", "可以保存转换历史记录", "支持多种文本格式转换"],
+        },
+        "word-counter": {
+          title: "字数统计器工具帮助",
+          description: "统计文本的字数、字符数、单词数等信息。",
+          usageSteps: [
+            "在输入框中输入或粘贴要统计的文本",
+            "系统将自动统计文本的各项指标",
+            "可以查看详细的统计结果，包括字数、字符数、单词数等",
+            "可以点击复制按钮复制统计结果",
+          ],
+          shortcuts: [
+            { key: "Ctrl + V", description: "粘贴文本并统计" },
+            { key: "Ctrl + C", description: "复制统计结果" },
+          ],
+          tips: ["支持中英文混合文本统计", "实时统计，无需手动刷新", "可以清除统计记录重新开始"],
+        },
+        base64: {
+          title: "Base64编码/解码工具帮助",
+          description: "对文本或文件进行Base64编码和解码操作。",
+          usageSteps: [
+            "选择操作类型：编码或解码",
+            "在输入框中输入或粘贴要处理的文本，或上传文件",
+            "处理结果将自动显示在输出框中",
+            "可以点击复制按钮复制结果，或点击下载按钮保存文件",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速编码/解码" },
+            { key: "Ctrl + C", description: "复制处理结果" },
+          ],
+          tips: ["支持多种文件格式的Base64编码", "解码结果可以预览", "可以批量处理多个文件"],
+        },
+        "url-encode": {
+          title: "URL编码/解码工具帮助",
+          description: "对URL进行编码和解码操作，确保URL的正确性和安全性。",
+          usageSteps: [
+            "选择操作类型：编码或解码",
+            "在输入框中输入或粘贴要处理的URL",
+            "处理结果将自动显示在输出框中",
+            "可以点击复制按钮复制结果",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速编码/解码" },
+            { key: "Ctrl + C", description: "复制处理结果" },
+          ],
+          tips: ["支持完整URL和URL参数的编码", "解码结果可以直接使用", "可以批量处理多个URL"],
+        },
+        timestamp: {
+          title: "时间戳转换工具帮助",
+          description: "在时间戳与人类可读日期时间之间进行转换。",
+          usageSteps: [
+            "选择转换类型：时间戳转日期或日期转时间戳",
+            "输入要转换的时间戳或选择日期时间",
+            "转换结果将自动显示",
+            "可以点击复制按钮复制结果",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速转换" },
+            { key: "Ctrl + C", description: "复制转换结果" },
+          ],
+          tips: ["支持多种时间戳格式", "可以直接使用当前时间", "支持批量转换多个时间戳"],
+        },
+        countdown: {
+          title: "倒计时生成器工具帮助",
+          description: "生成指定日期的倒计时，支持多种样式和格式。",
+          usageSteps: [
+            "选择目标日期和时间",
+            "根据需要调整倒计时的样式和格式",
+            "生成的倒计时将实时显示",
+            "可以复制生成的代码到自己的网站使用",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速生成倒计时" },
+            { key: "Ctrl + C", description: "复制倒计时代码" },
+          ],
+          tips: ["支持多种倒计时样式", "生成的代码可以直接嵌入到网站中", "可以自定义倒计时的颜色和字体"],
+        },
+        "color-converter": {
+          title: "RGB/Hex颜色转换工具帮助",
+          description: "在RGB和Hex颜色值之间进行转换，支持实时预览和颜色预设。",
+          usageSteps: [
+            "在RGB输入框中输入数值或使用滑块调整",
+            "或在Hex输入框中直接输入颜色代码",
+            "转换结果将实时显示在预览区域",
+            "可以点击复制按钮复制转换结果",
+          ],
+          shortcuts: [
+            { key: "Ctrl + C", description: "复制颜色值" },
+            { key: "R", description: "随机生成颜色" },
+          ],
+          tips: ["可以通过点击颜色预设快速选择常用颜色", "支持生成随机颜色", "可以同时查看RGB和Hex两种格式"],
+        },
+        "color-gradient": {
+          title: "颜色渐变生成工具帮助",
+          description: "生成CSS和SVG渐变代码，支持线性渐变和径向渐变。",
+          usageSteps: [
+            "选择渐变类型：线性或径向",
+            "调整渐变的方向、角度或形状",
+            "添加或删除颜色停止点，调整颜色和位置",
+            "复制生成的CSS或SVG代码到自己的项目中",
+          ],
+          shortcuts: [
+            { key: "Ctrl + C", description: "复制渐变代码" },
+            { key: "R", description: "随机生成渐变" },
+          ],
+          tips: ["支持多种渐变方向和角度", "可以通过预设快速选择常用渐变", "生成的代码可以直接用于网页设计"],
+        },
+        "unit-converter": {
+          title: "单位转换工具帮助",
+          description: "支持长度、重量、温度等多种单位之间的转换。",
+          usageSteps: [
+            "选择要转换的单位类型（长度、重量、温度等）",
+            "在左侧输入框中输入数值",
+            "选择输入单位和输出单位",
+            "转换结果将自动显示在右侧输出框中",
+          ],
+          shortcuts: [
+            { key: "Ctrl + Enter", description: "快速转换" },
+            { key: "Ctrl + S", description: "交换单位" },
+            { key: "Ctrl + C", description: "复制转换结果" },
+          ],
+          tips: ["支持多种单位类型的转换", "可以通过常用转换快捷方式快速转换", "转换结果将自动保存到历史记录"],
+        },
       },
     }
   },
@@ -157,7 +421,25 @@ export default {
       let filtered = this.tools
 
       // 分类筛选
-      if (this.selectedCategory !== "all") {
+      if (this.selectedCategory === "all") {
+        // 显示所有工具
+        filtered = this.tools
+      } else if (this.selectedCategory === "recent") {
+        // 最近使用的工具
+        const recentToolIds = this.getRecentUsage()
+        filtered = this.tools.filter((tool) => recentToolIds.includes(tool.id))
+        // 按最近使用顺序排序
+        filtered.sort((a, b) => {
+          const indexA = recentToolIds.indexOf(a.id)
+          const indexB = recentToolIds.indexOf(b.id)
+          return indexA - indexB
+        })
+      } else if (this.selectedCategory === "favorites") {
+        // 收藏的工具
+        const favoriteToolIds = this.favorites
+        filtered = this.tools.filter((tool) => favoriteToolIds.includes(tool.id))
+      } else {
+        // 其他分类筛选
         filtered = filtered.filter((tool) => tool.category === this.selectedCategory)
       }
 
@@ -176,7 +458,7 @@ export default {
       return this.toolComponents[this.selectedToolId]
     },
   },
-  onMounted() {
+  mounted() {
     // 检查URL参数，实现直接打开工具
     const urlParams = new URLSearchParams(window.location.search)
     const toolId = urlParams.get("tool")
@@ -193,10 +475,29 @@ export default {
     selectCategory(categoryId) {
       this.selectedCategory = categoryId
     },
+    // 预加载工具组件
+    preloadToolComponent(toolId) {
+      // 如果组件已经预加载过，直接返回
+      if (this.preloadedComponents[toolId]) {
+        return
+      }
+
+      // 获取组件配置
+      const componentConfig = this.toolComponents[toolId]
+      if (componentConfig) {
+        // 预加载组件
+        componentConfig().then((component) => {
+          this.preloadedComponents[toolId] = component
+        })
+      }
+    },
     // 打开工具模态框
     openToolModal(toolId) {
       this.selectedToolId = toolId
       this.showModal = true
+
+      // 将工具添加到最近使用记录
+      this.addToRecent(toolId)
 
       // 更新URL参数，实现分享功能
       this.updateUrlParams(toolId)
@@ -217,6 +518,18 @@ export default {
         url.searchParams.delete("tool")
       }
       window.history.pushState({}, "", url)
+    },
+    // 打开工具帮助
+    openToolHelp(toolId) {
+      const helpContent = this.toolHelpContents[toolId]
+      if (helpContent) {
+        this.currentHelpContent = helpContent
+        this.helpModalVisible = true
+      }
+    },
+    // 关闭帮助模态框
+    closeHelpModal() {
+      this.helpModalVisible = false
     },
   },
 }
@@ -329,6 +642,7 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px var(--shadow-color);
+  position: relative;
 }
 
 .tool-card:hover {
@@ -342,9 +656,65 @@ export default {
   box-shadow: 0 8px 24px var(--shadow-color);
 }
 
+/* 工具头部 */
+.tool-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 16px;
+}
+
 .tool-icon {
   font-size: 3rem;
-  margin-bottom: 16px;
+}
+
+/* 收藏按钮 */
+.favorite-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 40px;
+  height: 40px;
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  z-index: 10;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1) rotate(5deg);
+  border-color: var(--accent-color);
+}
+
+.favorite-btn.active {
+  color: var(--accent-color);
+  animation: bounce 0.3s ease;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.favorite-btn:not(.active) {
+  opacity: 0.6;
+}
+
+.favorite-btn:not(.active):hover {
+  opacity: 1;
 }
 
 .tool-card h3 {
@@ -430,25 +800,54 @@ export default {
   color: var(--text-primary);
 }
 
+/* 模态框操作按钮组 */
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .modal-close {
   background: none;
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-secondary);
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
   width: 40px;
   height: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
   border-radius: 50%;
-  transition: all 0.3s ease;
 }
 
 .modal-close:hover {
   color: var(--text-primary);
   background: var(--hover-bg);
+}
+
+/* 帮助按钮 */
+.help-btn {
+  width: 40px;
+  height: 40px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.help-btn:hover {
+  background: var(--accent-color-hover);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .modal-body {
@@ -474,6 +873,40 @@ export default {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 30px;
+}
+
+/* 工具加载状态 */
+.tool-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 20px;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.tool-loading p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin: 0;
 }
 
 /* 响应式设计 */
