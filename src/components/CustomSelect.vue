@@ -34,6 +34,7 @@
           v-model="searchQuery"
           placeholder="搜索..."
           @focus="handleSearchFocus"
+          @input="debouncedSearch(searchQuery)"
           @keydown.enter="selectFirstOption"
           @keydown.arrow-down="navigateOptions('down')"
           @keydown.arrow-up="navigateOptions('up')"
@@ -65,7 +66,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted, nextTick } from "vue"
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue"
 
 export default {
   name: "CustomSelect",
@@ -90,13 +91,27 @@ export default {
       default: true,
     },
   },
-  emits: ["update:modelValue"],
+  emits: ["update:modelValue", "search"],
   setup(props, { emit }) {
     const isOpen = ref(false)
     const selectContainer = ref(null)
     const searchInput = ref(null)
     const searchQuery = ref("")
     const focusIndex = ref(-1)
+
+    // 防抖函数
+    const debounce = (func, delay) => {
+      let timeoutId
+      return (...args) => {
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => func.apply(null, args), delay)
+      }
+    }
+
+    // 防抖版本的搜索事件
+    const debouncedSearch = debounce((query) => {
+      emit("search", query)
+    }, 300)
 
     const selectedValue = computed({
       get: () => props.modelValue,
@@ -113,15 +128,11 @@ export default {
 
     // 过滤后的选项列表
     const filteredOptions = computed(() => {
-      if (!searchQuery.value.trim() || !props.searchable) {
-        return props.options
-      }
-
-      const query = searchQuery.value.toLowerCase().trim()
-      return props.options.filter((option) => {
-        return option.label.toLowerCase().includes(query) || option.value.toLowerCase().includes(query)
-      })
+      // 禁用本地过滤，完全依赖API搜索
+      return props.options
     })
+
+    // 移除watch，只依赖@input事件触发search
 
     // 切换下拉列表的显示状态
     const toggleDropdown = () => {
@@ -131,7 +142,6 @@ export default {
       if (isOpen.value && props.searchable) {
         nextTick(() => {
           searchInput.value?.focus()
-          searchQuery.value = ""
           focusIndex.value = -1
         })
       }
@@ -141,8 +151,12 @@ export default {
     const selectOption = (option) => {
       selectedValue.value = option.value
       isOpen.value = false
-      searchQuery.value = ""
       focusIndex.value = -1
+
+      // 使用nextTick延迟重置searchQuery，避免触发不必要的搜索事件
+      nextTick(() => {
+        searchQuery.value = ""
+      })
     }
 
     // 选择第一个匹配选项
@@ -173,8 +187,7 @@ export default {
 
     // 处理搜索框聚焦
     const handleSearchFocus = () => {
-      // 聚焦时重置搜索条件和焦点索引
-      searchQuery.value = ""
+      // 聚焦时只重置焦点索引，不重置搜索条件
       focusIndex.value = -1
     }
 
@@ -218,6 +231,7 @@ export default {
       selectFirstOption,
       navigateOptions,
       handleSearchFocus,
+      debouncedSearch,
     }
   },
 }

@@ -28,7 +28,9 @@ export function useWeatherApi() {
     }
 
     try {
-      const url = `${GEO_API_BASE_URL}?name=${encodeURIComponent(query)}&count=${limit}&language=zh&format=json`
+      // 设置最大限制，避免返回过多结果
+      const safeLimit = Math.min(limit, 20)
+      const url = `${GEO_API_BASE_URL}?name=${encodeURIComponent(query)}&count=${safeLimit}&language=zh&format=json`
       const response = await fetch(url)
 
       if (!response.ok) {
@@ -39,18 +41,72 @@ export function useWeatherApi() {
 
       // 转换数据格式为 { value, label, lat, lon } 格式
       if (data.results && Array.isArray(data.results)) {
-        return data.results.map((city) => ({
-          value: city.name.toLowerCase().replace(/\s+/g, "-"),
-          label: `${city.name}${city.admin1 ? `, ${city.admin1}` : ""}${city.country ? `, ${city.country}` : ""}`,
-          lat: city.latitude,
-          lon: city.longitude,
-        }))
+        return data.results.map((city, index) => {
+          // 使用城市名+行政区划+经纬度+时间戳生成绝对唯一value
+          // 确保不同城市不会产生相同value，避免重复键错误
+          const uniqueValue = `${city.name.toLowerCase().replace(/\s+/g, "-")}${
+            city.admin1 ? `-${city.admin1.toLowerCase().replace(/\s+/g, "-")}` : ""
+          }${city.country ? `-${city.country.toLowerCase().replace(/\s+/g, "-")}` : ""}
+          -${city.latitude.toFixed(4)}-${city.longitude.toFixed(4)}-${Date.now()}-${index}`
+
+          return {
+            value: uniqueValue,
+            label: `${city.name}${city.admin1 ? `, ${city.admin1}` : ""}${city.country ? `, ${city.country}` : ""}`,
+            lat: city.latitude,
+            lon: city.longitude,
+          }
+        })
       }
 
       return []
     } catch (error) {
       console.error("城市搜索失败:", error)
       return defaultCities
+    }
+  }
+
+  /**
+   * 逆地理编码：根据经纬度获取位置名称
+   * @param {number} lat 纬度
+   * @param {number} lon 经度
+   * @returns {Promise<Object|null>} 位置信息 {value, label, lat, lon}
+   */
+  const reverseGeocode = async (lat, lon) => {
+    try {
+      // 使用Nominatim API进行逆地理编码，支持CORS
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=zh-CN`
+      const response = await fetch(url)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log("Nominatim API响应数据:", data)
+
+      if (data && data.address) {
+        const address = data.address
+        const city = address.city || address.town || address.village || address.county || "未知地点"
+        const province = address.state || address.region || ""
+        const country = address.country || ""
+
+        // 使用城市名+行政区划+经纬度生成唯一value
+        const uniqueValue = `${city.toLowerCase().replace(/\s+/g, "-")}${
+          province ? `-${province.toLowerCase().replace(/\s+/g, "-")}` : ""
+        }${country ? `-${country.toLowerCase().replace(/\s+/g, "-")}` : ""}-${lat.toFixed(4)}-${lon.toFixed(4)}`
+
+        return {
+          value: uniqueValue,
+          label: `${city}${province ? `, ${province}` : ""}${country ? `, ${country}` : ""}`,
+          lat: lat,
+          lon: lon,
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error("逆地理编码失败:", error)
+      return null
     }
   }
 
@@ -116,17 +172,26 @@ export function useWeatherApi() {
   const getCities = async () => {
     // 模拟API延迟
     await new Promise((resolve) => setTimeout(resolve, 300))
+    // 返回默认城市列表
     return defaultCities
   }
 
   /**
-   * 根据城市名称获取坐标
-   * @param {string} city 城市名称
+   * 获取城市坐标（支持从默认列表和动态搜索结果中查找）
+   * @param {string} cityValue 城市value
+   * @param {Array} citiesList 当前可用的城市列表
    * @returns {Object|null} 城市坐标 {lat, lon}
    */
-  const getCityCoordinates = (city) => {
-    const cityData = defaultCities.find((c) => c.value === city)
-    return cityData ? { lat: cityData.lat, lon: cityData.lon } : null
+  const getCityCoordinates = (cityValue, citiesList = []) => {
+    // 先从传入的城市列表中查找
+    const cityData = citiesList.find((c) => c.value === cityValue)
+    if (cityData) {
+      return { lat: cityData.lat, lon: cityData.lon }
+    }
+
+    // 如果传入列表中没有，再从默认城市列表中查找
+    const defaultCityData = defaultCities.find((c) => c.value === cityValue)
+    return defaultCityData ? { lat: defaultCityData.lat, lon: defaultCityData.lon } : null
   }
 
   /**
@@ -139,20 +204,27 @@ export function useWeatherApi() {
       // 如果直接传入坐标对象，直接返回
       return location
     } else if (typeof location === "string") {
-      // 如果传入城市名称，从默认城市列表中查找
-      const cityCoords = getCityCoordinates(location)
-      if (cityCoords) {
-        return cityCoords
+      // 检查是否是搜索生成的城市值，直接提取坐标
+      if (location.includes("lat_") && location.includes("lon_")) {
+        // 提取坐标格式：lat_39.9042_lon_116.4074
+        const match = location.match(/lat_([-\d.]+)_lon_([-\d.]+)/)
+        if (match) {
+          return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) }
+        }
       }
 
-      // 如果默认城市列表中没有，尝试通过城市搜索API获取
-      try {
-        const searchResults = await searchCities(location, 1)
-        if (searchResults.length > 0) {
-          return { lat: searchResults[0].lat, lon: searchResults[0].lon }
+      // 检查是否包含经纬度信息
+      if (location.includes("-") && location.match(/[-\d.]+/g)) {
+        // 先尝试从搜索结果中获取坐标
+        try {
+          // 使用搜索API获取城市信息（限制只返回1个结果）
+          const searchResults = await searchCities(location, 1)
+          if (searchResults.length > 0) {
+            return { lat: searchResults[0].lat, lon: searchResults[0].lon }
+          }
+        } catch (error) {
+          console.error("获取城市坐标失败:", error)
         }
-      } catch (error) {
-        console.error("获取城市坐标失败:", error)
       }
     }
 
@@ -430,6 +502,7 @@ export function useWeatherApi() {
   return {
     getCities,
     searchCities,
+    reverseGeocode,
     getCoordinates,
     getCurrentWeather,
     getWeatherForecast,

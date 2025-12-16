@@ -13,8 +13,9 @@
           <CustomSelect
             v-model="selectedCity"
             :options="cities"
-            placeholder="请选择城市"
+            placeholder="请选择或搜索城市"
             @update:modelValue="handleCityChange"
+            @search="searchCity"
           />
           <button class="location-btn" @click="getCurrentLocation" title="获取当前位置">
             <svg
@@ -122,7 +123,7 @@ export default {
   },
   setup() {
     // 初始化API和工具
-    const { getCities, getCurrentWeather, getCoordinates } = useWeatherApi()
+    const { getCities, getCurrentWeather, getCoordinates, reverseGeocode, searchCities } = useWeatherApi()
     const { convertTemperature, formatTemperature, getTemperatureUnits } = useTemperatureConversion()
     const { generateCacheKey, withCache } = useWeatherCache()
     const { getCurrentPosition } = useGeolocation()
@@ -161,12 +162,18 @@ export default {
 
     // 获取城市名称
     const cityName = computed(() => {
+      // 优先使用selectedCity对应的城市名称
+      const city = cities.value.find((c) => c.value === selectedCity.value)
+      if (city) {
+        return city.label
+      }
+
+      // 如果没有找到，再使用currentLocationCity的名称
       if (currentLocationCity.value) {
         return currentLocationCity.value.label
       }
 
-      const city = cities.value.find((c) => c.value === selectedCity.value)
-      return city ? city.label : ""
+      return ""
     })
 
     // 加载城市列表
@@ -186,13 +193,23 @@ export default {
 
     // 获取天气数据（支持城市名称或坐标）
     const fetchWeatherData = async (location = null) => {
-      const targetLocation = location || selectedCity.value
+      let targetLocation = location || selectedCity.value
       if (!targetLocation) return
 
       loading.value = true
       error.value = null
 
       try {
+        // 检查是否是城市名称字符串，尝试从当前城市列表中查找坐标
+        if (typeof targetLocation === "string") {
+          // 从当前城市列表中查找城市数据
+          const cityData = cities.value.find((c) => c.value === targetLocation)
+          if (cityData && cityData.lat && cityData.lon) {
+            // 如果找到城市数据，直接使用坐标获取天气
+            targetLocation = { lat: cityData.lat, lon: cityData.lon }
+          }
+        }
+
         // 使用缓存包装函数获取天气数据
         const cacheKey =
           typeof targetLocation === "string"
@@ -230,13 +247,17 @@ export default {
 
         const { latitude, longitude } = positionResult.data
 
+        // 通过逆地理编码获取具体位置名称
+        const locationInfo = await reverseGeocode(latitude, longitude)
+        console.log("逆地理编码结果:", locationInfo)
+
         // 使用坐标查询天气数据
         await fetchWeatherData({ lat: latitude, lon: longitude })
 
         // 保存当前位置信息
         currentLocationCity.value = {
-          value: `lat_${latitude}_lon_${longitude}`,
-          label: "当前位置",
+          value: locationInfo ? locationInfo.value : `lat_${latitude}_lon_${longitude}`,
+          label: locationInfo ? locationInfo.label : "当前位置",
           lat: latitude,
           lon: longitude,
         }
@@ -255,6 +276,19 @@ export default {
       } finally {
         locationLoading.value = false
       }
+    }
+
+    // 城市搜索功能
+    const searchCity = async (query) => {
+      // 只有在搜索词真正变化时才执行搜索
+      if (query.trim()) {
+        // 使用 searchCities API 动态搜索城市
+        const searchResults = await searchCities(query)
+
+        // 更新城市列表，即使搜索结果为空
+        cities.value = searchResults
+      }
+      // 不再在搜索词为空时重新加载默认城市列表
     }
 
     // 城市变更处理
@@ -290,6 +324,7 @@ export default {
       fetchWeatherData,
       handleCityChange,
       getCurrentLocation,
+      searchCity,
     }
   },
 }
