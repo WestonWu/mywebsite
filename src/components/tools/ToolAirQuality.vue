@@ -16,6 +16,24 @@
             placeholder="请选择城市"
             @update:modelValue="handleCityChange"
           />
+          <button class="location-btn" @click="getCurrentLocation" title="获取当前位置">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            {{ locationLoading ? "定位中..." : "当前位置" }}
+          </button>
         </div>
       </div>
 
@@ -69,42 +87,42 @@
               <div class="pollutant-label">PM2.5</div>
               <div class="pollutant-value">{{ airQualityData.pm25 }} μg/m³</div>
               <div class="pollutant-status" :class="getPollutantStatus(airQualityData.pm25, 'pm25')">
-                {{ getPollutantLevel(airQualityData.pm25, 'pm25') }}
+                {{ getPollutantLevel(airQualityData.pm25, "pm25") }}
               </div>
             </div>
             <div class="pollutant-item">
               <div class="pollutant-label">PM10</div>
               <div class="pollutant-value">{{ airQualityData.pm10 }} μg/m³</div>
               <div class="pollutant-status" :class="getPollutantStatus(airQualityData.pm10, 'pm10')">
-                {{ getPollutantLevel(airQualityData.pm10, 'pm10') }}
+                {{ getPollutantLevel(airQualityData.pm10, "pm10") }}
               </div>
             </div>
             <div class="pollutant-item">
               <div class="pollutant-label">O₃</div>
               <div class="pollutant-value">{{ airQualityData.o3 }} μg/m³</div>
               <div class="pollutant-status" :class="getPollutantStatus(airQualityData.o3, 'o3')">
-                {{ getPollutantLevel(airQualityData.o3, 'o3') }}
+                {{ getPollutantLevel(airQualityData.o3, "o3") }}
               </div>
             </div>
             <div class="pollutant-item">
               <div class="pollutant-label">NO₂</div>
               <div class="pollutant-value">{{ airQualityData.no2 }} μg/m³</div>
               <div class="pollutant-status" :class="getPollutantStatus(airQualityData.no2, 'no2')">
-                {{ getPollutantLevel(airQualityData.no2, 'no2') }}
+                {{ getPollutantLevel(airQualityData.no2, "no2") }}
               </div>
             </div>
             <div class="pollutant-item">
               <div class="pollutant-label">SO₂</div>
               <div class="pollutant-value">{{ airQualityData.so2 }} μg/m³</div>
               <div class="pollutant-status" :class="getPollutantStatus(airQualityData.so2, 'so2')">
-                {{ getPollutantLevel(airQualityData.so2, 'so2') }}
+                {{ getPollutantLevel(airQualityData.so2, "so2") }}
               </div>
             </div>
             <div class="pollutant-item">
               <div class="pollutant-label">CO</div>
               <div class="pollutant-value">{{ airQualityData.co }} mg/m³</div>
               <div class="pollutant-status" :class="getPollutantStatus(airQualityData.co, 'co')">
-                {{ getPollutantLevel(airQualityData.co, 'co') }}
+                {{ getPollutantLevel(airQualityData.co, "co") }}
               </div>
             </div>
           </div>
@@ -131,16 +149,18 @@ import { ref, computed, onMounted } from "vue"
 import CustomSelect from "../CustomSelect.vue"
 import { useWeatherApi } from "../../composables/useWeatherApi"
 import { useWeatherCache } from "../../composables/useWeatherCache"
+import { useGeolocation } from "../../composables/useGeolocation"
 
 export default {
   name: "ToolAirQuality",
   components: {
-    CustomSelect
+    CustomSelect,
   },
   setup() {
     // 初始化API和工具
     const { getCities, getAirQuality } = useWeatherApi()
     const { generateCacheKey, withCache } = useWeatherCache()
+    const { getCurrentPosition } = useGeolocation()
 
     // 状态管理
     const cities = ref([])
@@ -148,11 +168,18 @@ export default {
     const airQualityData = ref(null)
     const loading = ref(false)
     const error = ref(null)
+    const locationLoading = ref(false)
+    const locationError = ref(null)
+    const currentLocationCity = ref(null) // 当前位置的城市信息
 
     // 计算属性
     // 获取城市名称
     const cityName = computed(() => {
-      const city = cities.value.find(c => c.value === selectedCity.value)
+      if (currentLocationCity.value && selectedCity.value === currentLocationCity.value.value) {
+        return currentLocationCity.value.label
+      }
+
+      const city = cities.value.find((c) => c.value === selectedCity.value)
       return city ? city.label : ""
     })
 
@@ -171,20 +198,22 @@ export default {
       }
     }
 
-    // 获取空气质量数据
-    const fetchAirQualityData = async () => {
-      if (!selectedCity.value) return
+    // 获取空气质量数据（支持城市名称或坐标）
+    const fetchAirQualityData = async (location = null) => {
+      const targetLocation = location || selectedCity.value
+      if (!targetLocation) return
 
       loading.value = true
       error.value = null
 
       try {
         // 使用缓存包装函数获取空气质量数据
-        const cacheKey = generateCacheKey(selectedCity.value, "airQuality")
-        const result = await withCache(
-          () => getAirQuality(selectedCity.value),
-          cacheKey
-        )
+        const cacheKey =
+          typeof targetLocation === "string"
+            ? generateCacheKey(targetLocation, "airQuality")
+            : generateCacheKey(`lat_${targetLocation.lat}_lon_${targetLocation.lon}`, "airQuality")
+
+        const result = await withCache(() => getAirQuality(targetLocation), cacheKey)
 
         if (result.success) {
           airQualityData.value = result.data
@@ -199,9 +228,57 @@ export default {
       }
     }
 
+    // 获取当前位置
+    const getCurrentLocation = async () => {
+      locationLoading.value = true
+      locationError.value = null
+
+      try {
+        // 获取当前位置坐标
+        const positionResult = await getCurrentPosition()
+
+        if (!positionResult.success) {
+          locationError.value = positionResult.error
+          return
+        }
+
+        const { latitude, longitude } = positionResult.data
+
+        // 使用坐标查询天气数据
+        await fetchAirQualityData({ lat: latitude, lon: longitude })
+
+        // 保存当前位置信息
+        currentLocationCity.value = {
+          value: `lat_${latitude}_lon_${longitude}`,
+          label: "当前位置",
+          lat: latitude,
+          lon: longitude,
+        }
+
+        // 将当前位置添加到城市列表顶部
+        const locationCityExists = cities.value.some((city) => city.value === currentLocationCity.value.value)
+        if (!locationCityExists) {
+          cities.value.unshift(currentLocationCity.value)
+        }
+
+        // 选择当前位置
+        selectedCity.value = currentLocationCity.value.value
+      } catch (err) {
+        console.error("获取当前位置失败:", err)
+        locationError.value = "获取当前位置失败，请检查浏览器位置权限"
+      } finally {
+        locationLoading.value = false
+      }
+    }
+
     // 城市变更处理
     const handleCityChange = () => {
-      fetchAirQualityData()
+      // 如果选择的是当前位置，使用坐标查询
+      if (currentLocationCity.value && selectedCity.value === currentLocationCity.value.value) {
+        fetchAirQualityData(currentLocationCity.value)
+      } else {
+        fetchAirQualityData(selectedCity.value)
+      }
     }
 
     // 获取AQI等级
@@ -229,7 +306,8 @@ export default {
       if (aqi <= 50) return "各类人群可正常活动"
       if (aqi <= 100) return "极少数异常敏感人群应减少户外活动"
       if (aqi <= 150) return "儿童、老年人及心脏病、呼吸系统疾病患者应减少长时间、高强度的户外锻炼"
-      if (aqi <= 200) return "儿童、老年人及心脏病、呼吸系统疾病患者避免长时间、高强度的户外锻炼，一般人群适量减少户外运动"
+      if (aqi <= 200)
+        return "儿童、老年人及心脏病、呼吸系统疾病患者避免长时间、高强度的户外锻炼，一般人群适量减少户外运动"
       if (aqi <= 300) return "儿童、老年人和病人应当留在室内，避免体力消耗，一般人群应避免户外活动"
       return "儿童、老年人和病人应当留在室内，避免体力消耗，一般人群应避免户外活动"
     }
@@ -253,7 +331,7 @@ export default {
         o3: [160, 200, 300, 400, 800],
         no2: [40, 80, 180, 280, 565],
         so2: [50, 150, 475, 800, 1600],
-        co: [2, 4, 14, 24, 36]
+        co: [2, 4, 14, 24, 36],
       }
 
       const levels = ["优", "良", "轻度污染", "中度污染", "重度污染", "严重污染"]
@@ -271,12 +349,12 @@ export default {
     const getPollutantStatus = (value, type) => {
       const level = getPollutantLevel(value, type)
       const statusMap = {
-        "优": "status-good",
-        "良": "status-moderate",
-        "轻度污染": "status-unhealthy",
-        "中度污染": "status-very-unhealthy",
-        "重度污染": "status-hazardous",
-        "严重污染": "status-hazardous"
+        优: "status-good",
+        良: "status-moderate",
+        轻度污染: "status-unhealthy",
+        中度污染: "status-very-unhealthy",
+        重度污染: "status-hazardous",
+        严重污染: "status-hazardous",
       }
       return statusMap[level] || "status-moderate"
     }
@@ -284,7 +362,7 @@ export default {
     // 获取主要污染物
     const getPrimaryPollutant = (data) => {
       if (!data) return null
-      
+
       // 简化的主要污染物判断，实际应根据国家标准
       const pollutants = [
         { name: "PM2.5", value: data.pm25, threshold: 75 },
@@ -292,21 +370,23 @@ export default {
         { name: "O₃", value: data.o3, threshold: 200 },
         { name: "NO₂", value: data.no2, threshold: 80 },
         { name: "SO₂", value: data.so2, threshold: 150 },
-        { name: "CO", value: data.co, threshold: 4 }
+        { name: "CO", value: data.co, threshold: 4 },
       ]
 
       // 找出超标且数值最高的污染物
-      const exceedingPollutants = pollutants.filter(p => p.value > p.threshold)
+      const exceedingPollutants = pollutants.filter((p) => p.value > p.threshold)
       if (exceedingPollutants.length === 0) return "无"
-      
+
       return exceedingPollutants.reduce((max, current) => {
         return current.value > max.value ? current : max
       }).name
     }
 
-    // 组件挂载时加载城市列表
-    onMounted(() => {
-      loadCities()
+    // 组件挂载时加载城市列表，并尝试获取当前位置
+    onMounted(async () => {
+      await loadCities()
+      // 自动获取当前位置
+      await getCurrentLocation()
     })
 
     return {
@@ -315,18 +395,21 @@ export default {
       airQualityData,
       loading,
       error,
+      locationLoading,
+      locationError,
       cityName,
       fetchAirQualityData,
       handleCityChange,
+      getCurrentLocation,
       getAQILevel,
       getAQIDescription,
       getHealthAdvice,
       getAQIClass,
       getPollutantLevel,
       getPollutantStatus,
-      getPrimaryPollutant
+      getPrimaryPollutant,
     }
-  }
+  },
 }
 </script>
 
@@ -380,6 +463,40 @@ export default {
   text-align: center;
 }
 
+/* 位置按钮 */
+.location-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 8px 12px;
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.location-btn:hover {
+  background: var(--hover-bg);
+  border-color: #4a6cf7;
+  transform: translateY(-2px);
+}
+
+.location-btn:active {
+  transform: translateY(0);
+}
+
+.location-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* 加载状态 */
 .loading-state {
   display: flex;
@@ -400,8 +517,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-state p {

@@ -16,6 +16,24 @@
             placeholder="请选择城市"
             @update:modelValue="handleCityChange"
           />
+          <button class="location-btn" @click="getCurrentLocation" title="获取当前位置">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            {{ locationLoading ? "定位中..." : "当前位置" }}
+          </button>
         </div>
       </div>
 
@@ -98,16 +116,18 @@ import { ref, computed, onMounted } from "vue"
 import CustomSelect from "../CustomSelect.vue"
 import { useWeatherApi } from "../../composables/useWeatherApi"
 import { useWeatherCache } from "../../composables/useWeatherCache"
+import { useGeolocation } from "../../composables/useGeolocation"
 
 export default {
   name: "ToolSunriseSunset",
   components: {
-    CustomSelect
+    CustomSelect,
   },
   setup() {
     // 初始化API和工具
     const { getCities, getSunriseSunset } = useWeatherApi()
     const { generateCacheKey, withCache } = useWeatherCache()
+    const { getCurrentPosition } = useGeolocation()
 
     // 状态管理
     const cities = ref([])
@@ -115,11 +135,18 @@ export default {
     const sunriseSunsetData = ref(null)
     const loading = ref(false)
     const error = ref(null)
+    const locationLoading = ref(false)
+    const locationError = ref(null)
+    const currentLocationCity = ref(null) // 当前位置的城市信息
 
     // 计算属性
     // 获取城市名称
     const cityName = computed(() => {
-      const city = cities.value.find(c => c.value === selectedCity.value)
+      if (currentLocationCity.value && selectedCity.value === currentLocationCity.value.value) {
+        return currentLocationCity.value.label
+      }
+
+      const city = cities.value.find((c) => c.value === selectedCity.value)
       return city ? city.label : ""
     })
 
@@ -138,20 +165,22 @@ export default {
       }
     }
 
-    // 获取日出日落数据
-    const fetchSunriseSunsetData = async () => {
-      if (!selectedCity.value) return
+    // 获取日出日落数据（支持城市名称或坐标）
+    const fetchSunriseSunsetData = async (location = null) => {
+      const targetLocation = location || selectedCity.value
+      if (!targetLocation) return
 
       loading.value = true
       error.value = null
 
       try {
         // 使用缓存包装函数获取日出日落数据
-        const cacheKey = generateCacheKey(selectedCity.value, "sunriseSunset")
-        const result = await withCache(
-          () => getSunriseSunset(selectedCity.value),
-          cacheKey
-        )
+        const cacheKey =
+          typeof targetLocation === "string"
+            ? generateCacheKey(targetLocation, "sunriseSunset")
+            : generateCacheKey(`lat_${targetLocation.lat}_lon_${targetLocation.lon}`, "sunriseSunset")
+
+        const result = await withCache(() => getSunriseSunset(targetLocation), cacheKey)
 
         if (result.success) {
           sunriseSunsetData.value = result.data
@@ -166,14 +195,64 @@ export default {
       }
     }
 
-    // 城市变更处理
-    const handleCityChange = () => {
-      fetchSunriseSunsetData()
+    // 获取当前位置
+    const getCurrentLocation = async () => {
+      locationLoading.value = true
+      locationError.value = null
+
+      try {
+        // 获取当前位置坐标
+        const positionResult = await getCurrentPosition()
+
+        if (!positionResult.success) {
+          locationError.value = positionResult.error
+          return
+        }
+
+        const { latitude, longitude } = positionResult.data
+
+        // 使用坐标查询天气数据
+        await fetchSunriseSunsetData({ lat: latitude, lon: longitude })
+
+        // 保存当前位置信息
+        currentLocationCity.value = {
+          value: `lat_${latitude}_lon_${longitude}`,
+          label: "当前位置",
+          lat: latitude,
+          lon: longitude,
+        }
+
+        // 将当前位置添加到城市列表顶部
+        const locationCityExists = cities.value.some((city) => city.value === currentLocationCity.value.value)
+        if (!locationCityExists) {
+          cities.value.unshift(currentLocationCity.value)
+        }
+
+        // 选择当前位置
+        selectedCity.value = currentLocationCity.value.value
+      } catch (err) {
+        console.error("获取当前位置失败:", err)
+        locationError.value = "获取当前位置失败，请检查浏览器位置权限"
+      } finally {
+        locationLoading.value = false
+      }
     }
 
-    // 组件挂载时加载城市列表
-    onMounted(() => {
-      loadCities()
+    // 城市变更处理
+    const handleCityChange = () => {
+      // 如果选择的是当前位置，使用坐标查询
+      if (currentLocationCity.value && selectedCity.value === currentLocationCity.value.value) {
+        fetchSunriseSunsetData(currentLocationCity.value)
+      } else {
+        fetchSunriseSunsetData(selectedCity.value)
+      }
+    }
+
+    // 组件挂载时加载城市列表，并尝试获取当前位置
+    onMounted(async () => {
+      await loadCities()
+      // 自动获取当前位置
+      await getCurrentLocation()
     })
 
     return {
@@ -182,11 +261,14 @@ export default {
       sunriseSunsetData,
       loading,
       error,
+      locationLoading,
+      locationError,
       cityName,
       fetchSunriseSunsetData,
-      handleCityChange
+      handleCityChange,
+      getCurrentLocation,
     }
-  }
+  },
 }
 </script>
 
@@ -240,6 +322,40 @@ export default {
   text-align: center;
 }
 
+/* 位置按钮 */
+.location-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 8px 12px;
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.location-btn:hover {
+  background: var(--hover-bg);
+  border-color: #4a6cf7;
+  transform: translateY(-2px);
+}
+
+.location-btn:active {
+  transform: translateY(0);
+}
+
+.location-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* 加载状态 */
 .loading-state {
   display: flex;
@@ -260,8 +376,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-state p {
@@ -481,8 +601,12 @@ export default {
 }
 
 @keyframes sun-move {
-  0% { transform: translate(-50%, 50%) rotate(0deg); }
-  100% { transform: translate(-50%, -150%) rotate(180deg); }
+  0% {
+    transform: translate(-50%, 50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -150%) rotate(180deg);
+  }
 }
 
 /* 示意图标签 */

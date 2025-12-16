@@ -5,6 +5,7 @@ export function useWeatherApi() {
   const WEATHER_API_BASE_URL = import.meta.env.VITE_WEATHER_API_BASE_URL || "https://api.open-meteo.com/v1/forecast"
   const AIR_QUALITY_API_BASE_URL =
     import.meta.env.VITE_AIR_QUALITY_API_BASE_URL || "https://air-quality-api.open-meteo.com/v1/air-quality"
+  const GEO_API_BASE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 
   // 固定城市列表（可扩展为动态搜索）
   const defaultCities = [
@@ -19,6 +20,39 @@ export function useWeatherApi() {
     { value: "nanjing", label: "南京", lat: 32.0603, lon: 118.7969 },
     { value: "tianjin", label: "天津", lat: 39.3434, lon: 117.3616 },
   ]
+
+  // 城市搜索API
+  const searchCities = async (query, limit = 10) => {
+    if (!query.trim()) {
+      return defaultCities
+    }
+
+    try {
+      const url = `${GEO_API_BASE_URL}?name=${encodeURIComponent(query)}&count=${limit}&language=zh&format=json`
+      const response = await fetch(url)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      // 转换数据格式为 { value, label, lat, lon } 格式
+      if (data.results && Array.isArray(data.results)) {
+        return data.results.map((city) => ({
+          value: city.name.toLowerCase().replace(/\s+/g, "-"),
+          label: `${city.name}${city.admin1 ? `, ${city.admin1}` : ""}${city.country ? `, ${city.country}` : ""}`,
+          lat: city.latitude,
+          lon: city.longitude,
+        }))
+      }
+
+      return []
+    } catch (error) {
+      console.error("城市搜索失败:", error)
+      return defaultCities
+    }
+  }
 
   /**
    * 根据WMO天气代码获取天气图标
@@ -96,6 +130,36 @@ export function useWeatherApi() {
   }
 
   /**
+   * 获取坐标信息（支持城市名称或直接坐标）
+   * @param {string|Object} location 城市名称或坐标对象 {lat, lon}
+   * @returns {Promise<Object|null>} 坐标数据 {lat, lon}
+   */
+  const getCoordinates = async (location) => {
+    if (typeof location === "object" && location.lat && location.lon) {
+      // 如果直接传入坐标对象，直接返回
+      return location
+    } else if (typeof location === "string") {
+      // 如果传入城市名称，从默认城市列表中查找
+      const cityCoords = getCityCoordinates(location)
+      if (cityCoords) {
+        return cityCoords
+      }
+
+      // 如果默认城市列表中没有，尝试通过城市搜索API获取
+      try {
+        const searchResults = await searchCities(location, 1)
+        if (searchResults.length > 0) {
+          return { lat: searchResults[0].lat, lon: searchResults[0].lon }
+        }
+      } catch (error) {
+        console.error("获取城市坐标失败:", error)
+      }
+    }
+
+    return null
+  }
+
+  /**
    * 通用API请求函数
    * @param {string} url API请求URL
    * @returns {Promise<Object>} API响应数据
@@ -115,15 +179,15 @@ export function useWeatherApi() {
 
   /**
    * 获取实时天气
-   * @param {string} city 城市名称
+   * @param {string|Object} location 城市名称或坐标对象 {lat, lon}
    * @returns {Promise<Object>} 实时天气数据
    */
-  const getCurrentWeather = async (city) => {
+  const getCurrentWeather = async (location) => {
     try {
       // 模拟API延迟
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      const coords = getCityCoordinates(city)
+      const coords = await getCoordinates(location)
       if (!coords) {
         return {
           success: false,
@@ -163,15 +227,15 @@ export function useWeatherApi() {
 
   /**
    * 获取天气预报
-   * @param {string} city 城市名称
+   * @param {string|Object} location 城市名称或坐标对象 {lat, lon}
    * @returns {Promise<Object>} 天气预报数据
    */
-  const getWeatherForecast = async (city) => {
+  const getWeatherForecast = async (location) => {
     try {
       // 模拟API延迟
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      const coords = getCityCoordinates(city)
+      const coords = await getCoordinates(location)
       if (!coords) {
         return {
           success: false,
@@ -207,15 +271,15 @@ export function useWeatherApi() {
 
   /**
    * 获取空气质量
-   * @param {string} city 城市名称
+   * @param {string|Object} location 城市名称或坐标对象 {lat, lon}
    * @returns {Promise<Object>} 空气质量数据
    */
-  const getAirQuality = async (city) => {
+  const getAirQuality = async (location) => {
     try {
       // 模拟API延迟
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      const coords = getCityCoordinates(city)
+      const coords = await getCoordinates(location)
       if (!coords) {
         return {
           success: false,
@@ -255,15 +319,15 @@ export function useWeatherApi() {
 
   /**
    * 获取紫外线指数
-   * @param {string} city 城市名称
+   * @param {string|Object} location 城市名称或坐标对象 {lat, lon}
    * @returns {Promise<Object>} 紫外线指数数据
    */
-  const getUVIndex = async (city) => {
+  const getUVIndex = async (location) => {
     try {
       // 模拟API延迟
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      const coords = getCityCoordinates(city)
+      const coords = await getCoordinates(location)
       if (!coords) {
         return {
           success: false,
@@ -297,15 +361,15 @@ export function useWeatherApi() {
 
   /**
    * 获取日出日落时间
-   * @param {string} city 城市名称
+   * @param {string|Object} location 城市名称或坐标对象 {lat, lon}
    * @returns {Promise<Object>} 日出日落时间数据
    */
-  const getSunriseSunset = async (city) => {
+  const getSunriseSunset = async (location) => {
     try {
       // 模拟API延迟
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      const coords = getCityCoordinates(city)
+      const coords = await getCoordinates(location)
       if (!coords) {
         return {
           success: false,
@@ -365,6 +429,8 @@ export function useWeatherApi() {
 
   return {
     getCities,
+    searchCities,
+    getCoordinates,
     getCurrentWeather,
     getWeatherForecast,
     getAirQuality,

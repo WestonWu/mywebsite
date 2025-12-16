@@ -16,6 +16,24 @@
             placeholder="请选择城市"
             @update:modelValue="handleCityChange"
           />
+          <button class="location-btn" @click="getCurrentLocation" title="获取当前位置">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            {{ locationLoading ? "定位中..." : "当前位置" }}
+          </button>
         </div>
       </div>
 
@@ -128,16 +146,18 @@ import { ref, computed, onMounted } from "vue"
 import CustomSelect from "../CustomSelect.vue"
 import { useWeatherApi } from "../../composables/useWeatherApi"
 import { useWeatherCache } from "../../composables/useWeatherCache"
+import { useGeolocation } from "../../composables/useGeolocation"
 
 export default {
   name: "ToolUVIndex",
   components: {
-    CustomSelect
+    CustomSelect,
   },
   setup() {
     // 初始化API和工具
     const { getCities, getUVIndex } = useWeatherApi()
     const { generateCacheKey, withCache } = useWeatherCache()
+    const { getCurrentPosition } = useGeolocation()
 
     // 状态管理
     const cities = ref([])
@@ -145,11 +165,18 @@ export default {
     const uvData = ref(null)
     const loading = ref(false)
     const error = ref(null)
+    const locationLoading = ref(false)
+    const locationError = ref(null)
+    const currentLocationCity = ref(null) // 当前位置的城市信息
 
     // 计算属性
     // 获取城市名称
     const cityName = computed(() => {
-      const city = cities.value.find(c => c.value === selectedCity.value)
+      if (currentLocationCity.value && selectedCity.value === currentLocationCity.value.value) {
+        return currentLocationCity.value.label
+      }
+
+      const city = cities.value.find((c) => c.value === selectedCity.value)
       return city ? city.label : ""
     })
 
@@ -168,20 +195,22 @@ export default {
       }
     }
 
-    // 获取紫外线数据
-    const fetchUVData = async () => {
-      if (!selectedCity.value) return
+    // 获取紫外线数据（支持城市名称或坐标）
+    const fetchUVData = async (location = null) => {
+      const targetLocation = location || selectedCity.value
+      if (!targetLocation) return
 
       loading.value = true
       error.value = null
 
       try {
         // 使用缓存包装函数获取紫外线数据
-        const cacheKey = generateCacheKey(selectedCity.value, "uvIndex")
-        const result = await withCache(
-          () => getUVIndex(selectedCity.value),
-          cacheKey
-        )
+        const cacheKey =
+          typeof targetLocation === "string"
+            ? generateCacheKey(targetLocation, "uvIndex")
+            : generateCacheKey(`lat_${targetLocation.lat}_lon_${targetLocation.lon}`, "uvIndex")
+
+        const result = await withCache(() => getUVIndex(targetLocation), cacheKey)
 
         if (result.success) {
           uvData.value = result.data
@@ -196,9 +225,57 @@ export default {
       }
     }
 
+    // 获取当前位置
+    const getCurrentLocation = async () => {
+      locationLoading.value = true
+      locationError.value = null
+
+      try {
+        // 获取当前位置坐标
+        const positionResult = await getCurrentPosition()
+
+        if (!positionResult.success) {
+          locationError.value = positionResult.error
+          return
+        }
+
+        const { latitude, longitude } = positionResult.data
+
+        // 使用坐标查询天气数据
+        await fetchUVData({ lat: latitude, lon: longitude })
+
+        // 保存当前位置信息
+        currentLocationCity.value = {
+          value: `lat_${latitude}_lon_${longitude}`,
+          label: "当前位置",
+          lat: latitude,
+          lon: longitude,
+        }
+
+        // 将当前位置添加到城市列表顶部
+        const locationCityExists = cities.value.some((city) => city.value === currentLocationCity.value.value)
+        if (!locationCityExists) {
+          cities.value.unshift(currentLocationCity.value)
+        }
+
+        // 选择当前位置
+        selectedCity.value = currentLocationCity.value.value
+      } catch (err) {
+        console.error("获取当前位置失败:", err)
+        locationError.value = "获取当前位置失败，请检查浏览器位置权限"
+      } finally {
+        locationLoading.value = false
+      }
+    }
+
     // 城市变更处理
     const handleCityChange = () => {
-      fetchUVData()
+      // 如果选择的是当前位置，使用坐标查询
+      if (currentLocationCity.value && selectedCity.value === currentLocationCity.value.value) {
+        fetchUVData(currentLocationCity.value)
+      } else {
+        fetchUVData(selectedCity.value)
+      }
     }
 
     // 获取紫外线样式类
@@ -213,35 +290,24 @@ export default {
     // 获取防晒建议
     const getProtectionTips = (uvIndex) => {
       if (uvIndex <= 2) {
-        return [
-          "无需特别防护，可正常户外活动"
-        ]
+        return ["无需特别防护，可正常户外活动"]
       } else if (uvIndex <= 5) {
-        return [
-          "建议涂抹SPF15以上防晒霜",
-          "戴帽子和太阳镜",
-          "避免长时间在阳光下暴露"
-        ]
+        return ["建议涂抹SPF15以上防晒霜", "戴帽子和太阳镜", "避免长时间在阳光下暴露"]
       } else if (uvIndex <= 7) {
-        return [
-          "建议涂抹SPF30以上防晒霜",
-          "尽量避免10-16点户外活动",
-          "穿长袖衣物和长裤",
-          "戴宽檐帽和防紫外线太阳镜"
-        ]
+        return ["建议涂抹SPF30以上防晒霜", "尽量避免10-16点户外活动", "穿长袖衣物和长裤", "戴宽檐帽和防紫外线太阳镜"]
       } else if (uvIndex <= 10) {
         return [
           "必须涂抹SPF50以上防晒霜，每2小时补涂一次",
           "尽量待在室内，避免户外活动",
           "外出时穿防晒服、戴宽檐帽和太阳镜",
-          "使用遮阳伞或寻找阴凉处"
+          "使用遮阳伞或寻找阴凉处",
         ]
       } else {
         return [
           "极度危险，应避免一切户外活动",
           "必须待在室内，关闭窗户",
           "如必须外出，做好全面防护",
-          "涂抹SPF50+防晒霜，每1小时补涂一次"
+          "涂抹SPF50+防晒霜，每1小时补涂一次",
         ]
       }
     }
@@ -254,9 +320,11 @@ export default {
       return `${position}%`
     }
 
-    // 组件挂载时加载城市列表
-    onMounted(() => {
-      loadCities()
+    // 组件挂载时加载城市列表，并尝试获取当前位置
+    onMounted(async () => {
+      await loadCities()
+      // 自动获取当前位置
+      await getCurrentLocation()
     })
 
     return {
@@ -265,14 +333,17 @@ export default {
       uvData,
       loading,
       error,
+      locationLoading,
+      locationError,
       cityName,
       fetchUVData,
       handleCityChange,
+      getCurrentLocation,
       getUVClass,
       getProtectionTips,
-      getUVPosition
+      getUVPosition,
     }
-  }
+  },
 }
 </script>
 
@@ -326,6 +397,40 @@ export default {
   text-align: center;
 }
 
+/* 位置按钮 */
+.location-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 8px 12px;
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.location-btn:hover {
+  background: var(--hover-bg);
+  border-color: #4a6cf7;
+  transform: translateY(-2px);
+}
+
+.location-btn:active {
+  transform: translateY(0);
+}
+
+.location-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* 加载状态 */
 .loading-state {
   display: flex;
@@ -346,8 +451,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-state p {
