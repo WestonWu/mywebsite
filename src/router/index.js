@@ -1,12 +1,4 @@
 import { createRouter, createWebHistory } from "vue-router"
-import HomeView from "../views/HomeView.vue"
-import AboutView from "../views/AboutView.vue"
-import ProjectsView from "../views/ProjectsView.vue"
-import ContactView from "../views/ContactView.vue"
-import GalleryView from "../views/GalleryView.vue"
-import BlogView from "../views/BlogView.vue"
-import BlogPostView from "../views/BlogPostView.vue"
-import ToolsView from "../views/ToolsView.vue"
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,27 +6,27 @@ const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: HomeView,
+      component: () => import("../views/HomeView.vue"),
     },
     {
       path: "/about",
       name: "about",
-      component: AboutView,
+      component: () => import("../views/AboutView.vue"),
     },
     {
       path: "/projects",
       name: "projects",
-      component: ProjectsView,
+      component: () => import("../views/ProjectsView.vue"),
     },
     {
       path: "/contact",
       name: "contact",
-      component: ContactView,
+      component: () => import("../views/ContactView.vue"),
     },
     {
       path: "/gallery",
       name: "gallery",
-      component: GalleryView,
+      component: () => import("../views/GalleryView.vue"),
       meta: {
         title: "作品图库"
       }
@@ -42,7 +34,7 @@ const router = createRouter({
     {
       path: "/blog",
       name: "blog",
-      component: BlogView,
+      component: () => import("../views/BlogView.vue"),
       meta: {
         title: "博客文章"
       }
@@ -50,7 +42,7 @@ const router = createRouter({
     {
       path: "/blog/:id",
       name: "blogPost",
-      component: BlogPostView,
+      component: () => import("../views/BlogPostView.vue"),
       meta: {
         title: "博客详情"
       },
@@ -59,7 +51,7 @@ const router = createRouter({
     {
       path: "/tools",
       name: "tools",
-      component: ToolsView,
+      component: () => import("../views/ToolsView.vue"),
       meta: {
         title: "实用工具"
       }

@@ -6,10 +6,6 @@
 
 <script setup>
 import { onMounted, ref, onUnmounted, inject, watch } from "vue"
-import { Chart, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend, RadarController } from "chart.js"
-
-// 注册所需的组件
-Chart.register(RadarController, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
 
 const props = defineProps({
   skills: {
@@ -29,6 +25,7 @@ const isDarkMode = theme.isDarkMode
 
 const canvasRef = ref(null)
 let chartInstance = null
+let Chart = null
 
 // 获取当前主题的图表配置
 const getChartConfig = () => {
@@ -48,11 +45,60 @@ const getChartConfig = () => {
   }
 }
 
+// 更新图表主题配置，避免重新创建图表
+const updateChartTheme = () => {
+  if (!chartInstance) return
+
+  const chartConfig = getChartConfig()
+  const dataset = chartInstance.data.datasets[0]
+
+  // 更新数据集样式
+  dataset.backgroundColor = chartConfig.backgroundColor
+  dataset.borderColor = chartConfig.borderColor
+  dataset.pointBackgroundColor = chartConfig.pointBackgroundColor
+  dataset.pointBorderColor = chartConfig.pointBorderColor
+  dataset.pointHoverBackgroundColor = chartConfig.pointHoverBackgroundColor
+  dataset.pointHoverBorderColor = chartConfig.pointHoverBorderColor
+
+  // 更新刻度和网格样式
+  const scales = chartInstance.options.scales
+  if (scales.r) {
+    scales.r.angleLines.color = chartConfig.angleLinesColor
+    scales.r.grid.color = chartConfig.gridColor
+    scales.r.pointLabels.color = chartConfig.pointLabelsColor
+    scales.r.ticks.color = chartConfig.ticksColor
+  }
+
+  // 更新tooltip样式
+  chartInstance.options.plugins.tooltip.backgroundColor = isDarkMode.value ? "rgba(0, 0, 0, 0.8)" : "rgba(255, 255, 255, 0.8)"
+  chartInstance.options.plugins.tooltip.titleColor = isDarkMode.value ? "#fff" : "#000"
+  chartInstance.options.plugins.tooltip.bodyColor = isDarkMode.value ? "#fff" : "#000"
+  chartInstance.options.plugins.tooltip.borderColor = isDarkMode.value ? "#fff" : "#000"
+
+  // 更新图表
+  chartInstance.update('none') // 使用'none'模式，避免动画
+}
+
 // 初始化图表
-const initChart = () => {
+const initChart = async () => {
   if (!canvasRef.value) return
 
   try {
+    // 延迟加载Chart.js，减少初始加载时间
+    if (!Chart) {
+      const chartModule = await import('chart.js')
+      Chart = chartModule.Chart
+      // 只注册必要的组件
+      Chart.register(
+        chartModule.RadarController,
+        chartModule.RadialLinearScale,
+        chartModule.PointElement,
+        chartModule.LineElement,
+        chartModule.Filler,
+        chartModule.Tooltip
+      )
+    }
+
     const ctx = canvasRef.value.getContext("2d")
 
     // 准备数据
@@ -63,7 +109,7 @@ const initChart = () => {
     // 获取当前主题的图表配置
     const chartConfig = getChartConfig()
 
-    // 创建图表
+    // 创建图表，优化配置以减少强制重排
     chartInstance = new Chart(ctx, {
       type: props.chartType,
       data: {
@@ -81,14 +127,25 @@ const initChart = () => {
             pointHoverBackgroundColor: chartConfig.pointHoverBackgroundColor,
             pointHoverBorderColor: chartConfig.pointHoverBorderColor,
             pointHoverBorderWidth: 2,
-            pointRadius: 5,
-            pointHoverRadius: 7,
+            pointRadius: 4, // 减小点半径
+            pointHoverRadius: 6, // 减小悬停点半径
+            pointHitRadius: 10, // 保持足够的点击区域
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 0, // 禁用动画，减少重排
+        },
+        transitions: {
+          active: {
+            animation: {
+              duration: 0 // 禁用激活状态动画
+            }
+          }
+        },
         scales: {
           r: {
             type: "radialLinear",
@@ -137,6 +194,9 @@ const initChart = () => {
             bodyColor: isDarkMode.value ? "#fff" : "#000",
             borderColor: isDarkMode.value ? "#fff" : "#000",
             borderWidth: 1,
+            animation: {
+              duration: 0 // 禁用tooltip动画
+            }
           },
         },
       },
@@ -146,18 +206,19 @@ const initChart = () => {
   }
 }
 
-// 监听主题变化，重新创建图表
+// 监听主题变化，更新图表配置而非重新创建
 watch(isDarkMode, () => {
   if (chartInstance) {
-    chartInstance.destroy()
-    chartInstance = null
+    updateChartTheme()
   }
-  initChart()
 })
 
-// 初始化图表 - 只在组件挂载时调用一次
+// 初始化图表 - 延迟执行，避免阻塞主线程
 onMounted(() => {
-  initChart()
+  // 使用setTimeout延迟加载图表，让页面先渲染
+  setTimeout(() => {
+    initChart()
+  }, 500)
 })
 
 // 组件卸载时销毁图表

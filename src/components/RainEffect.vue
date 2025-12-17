@@ -20,7 +20,7 @@ function createRaindrops() {
   rainContainer.value.innerHTML = '';
   raindrops = [];
   
-  const count = 100; // 保持雨滴数量为100个
+  const count = 50; // 减少雨滴数量到50个，提高性能
   
   for (let i = 0; i < count; i++) {
     const raindrop = createRaindropElement();
@@ -95,8 +95,8 @@ function createSplash(x, y) {
     return;
   }
   
-  // 创建多个水花粒子
-  const splashCount = 8 + Math.floor(Math.random() * 11); // 恢复水花粒子数量到8-18个
+  // 减少水花粒子数量，提高性能
+  const splashCount = 3 + Math.floor(Math.random() * 5); // 减少到3-7个水花粒子
   
   for (let i = 0; i < splashCount; i++) {
     // 创建水花粒子元素
@@ -105,8 +105,8 @@ function createSplash(x, y) {
     // 设置样式类
     splashElement.classList.add('splash-particle');
     
-    // 随机大小
-    const size = 2 + Math.random() * 5; // 2-7px
+    // 随机大小，略小一些
+    const size = 1 + Math.random() * 3; // 1-4px
     
     // 设置初始样式
     Object.assign(splashElement.style, {
@@ -118,25 +118,25 @@ function createSplash(x, y) {
       position: 'absolute',
       borderRadius: '50%',
       pointerEvents: 'none',
-      opacity: 0.7, // 修复：使用数值而不是字符串
-      transform: `translate(0, 0)`, // 使用transform提升性能
-      willChange: 'transform, opacity' // 提示浏览器该元素将要改变
+      opacity: 0.7,
+      transform: `translate(0, 0)`,
+      willChange: 'transform, opacity'
     });
     
     rainContainer.value.appendChild(splashElement);
     
-    // 创建水花粒子对象
+    // 创建水花粒子对象，简化属性
     const splashParticle = {
       element: splashElement,
       x: x,
       y: y,
       size: size,
-      // 随机速度方向，主要向上和向外
-      speedX: (-1 + Math.random() * 2) * 2, // 增加水平速度范围
-      speedY: (-2 - Math.random() * 2), // 增加初始向上速度
-      gravity: 0.1 + Math.random() * 0.2, // 减小重力影响，使水花飘散更慢
-      opacity: 0.8, // 增加初始透明度
-      life: 1.5 // 增加生命周期至1.5
+      // 简化速度范围
+      speedX: (-1 + Math.random() * 2) * 1.5,
+      speedY: (-2 - Math.random() * 1.5),
+      gravity: 0.15 + Math.random() * 0.15,
+      opacity: 0.7,
+      life: 1.2 // 略短的生命周期
     };
     
     splashes.push(splashParticle);
