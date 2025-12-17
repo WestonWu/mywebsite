@@ -653,10 +653,10 @@ export default {
     // 预加载工具组件
     preloadToolComponent(toolId) {
       // 如果组件已经预加载过，直接返回
-      if (this.preloadedComponents[toolId] === 'loaded') {
+      if (this.preloadedComponents[toolId] === "loaded") {
         return
       }
-      if (this.preloadedComponents[toolId] === 'loading') {
+      if (this.preloadedComponents[toolId] === "loading") {
         return
       }
 
@@ -664,15 +664,16 @@ export default {
       const component = this.toolComponents[toolId]
       if (component) {
         // 标记为加载中
-        this.preloadedComponents[toolId] = 'loading'
-        
+        this.preloadedComponents[toolId] = "loading"
+
         // 尝试获取异步组件的loader函数并预加载
         if (component.__asyncLoader) {
           // 调用loader函数预加载组件
-          component.__asyncLoader()
+          component
+            .__asyncLoader()
             .then(() => {
               // 标记为已加载
-              this.preloadedComponents[toolId] = 'loaded'
+              this.preloadedComponents[toolId] = "loaded"
             })
             .catch(() => {
               // 加载失败，清理状态
@@ -680,7 +681,7 @@ export default {
             })
         } else {
           // 如果没有loader函数，标记为已加载
-          this.preloadedComponents[toolId] = 'loaded'
+          this.preloadedComponents[toolId] = "loaded"
         }
       }
     },
@@ -959,10 +960,10 @@ export default {
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 1000;
   overflow-y: auto;
-  padding: 20px;
+  padding: 100px 20px 20px;
 }
 
 .modal-content {
@@ -970,12 +971,13 @@ export default {
   border-radius: 16px;
   width: 100%;
   max-width: 900px;
-  max-height: 90vh;
+  max-height: calc(100vh - 120px);
   overflow: hidden;
   box-shadow: 0 20px 60px var(--shadow-color);
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-color);
+  margin-top: 0;
 }
 
 .modal-header {
@@ -1118,9 +1120,13 @@ export default {
     gap: 20px;
   }
 
+  .modal-overlay {
+    padding: 80px 10px 10px;
+  }
+
   .modal-content {
-    margin: 10px;
-    max-height: calc(100vh - 20px);
+    margin: 0;
+    max-height: calc(100vh - 90px);
   }
 
   .modal-header,
