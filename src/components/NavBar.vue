@@ -90,16 +90,22 @@ const isMenuOpen = ref(false)
 
 function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value
+  // 控制body滚动
+  document.body.style.overflow = isMenuOpen.value ? 'hidden' : ''
 }
 
 function closeMenu() {
   isMenuOpen.value = false
+  // 恢复body滚动
+  document.body.style.overflow = ''
 }
 
 // 添加滚动监听，当页面滚动时关闭菜单
 function handleScroll() {
   if (isMenuOpen.value) {
     isMenuOpen.value = false
+    // 恢复body滚动
+    document.body.style.overflow = ''
   }
 }
 
@@ -260,6 +266,8 @@ onUnmounted(() => {
     padding-top: 80px;
     gap: 2rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .nav-links.active {
