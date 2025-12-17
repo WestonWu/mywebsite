@@ -20,7 +20,7 @@ function createParticles() {
   container.value.innerHTML = ""
   particles = []
 
-  const count = 50 // 减少粒子数量到50个，提高性能
+  const count = 30 // 进一步减少粒子数量到30个，提高性能
 
   for (let i = 0; i < count; i++) {
     const particle = createParticleElement(i)
@@ -185,12 +185,12 @@ function drawConnections(particle) {
   })
   particle.connections = []
 
-  // 限制连接线的数量，只连接最近的几个粒子，减少到2个
-  const maxConnections = 2
+  // 进一步限制连接线的数量，只连接最近的1个粒子
+  const maxConnections = 1
   let connections = []
 
-  // 只检查最近的10个粒子，减少计算量
-  const checkCount = Math.min(10, particles.length)
+  // 只检查最近的5个粒子，进一步减少计算量
+  const checkCount = Math.min(5, particles.length)
   for (let i = 0; i < checkCount; i++) {
     const otherParticle = particles[i]
     if (particle === otherParticle) continue
@@ -199,7 +199,7 @@ function drawConnections(particle) {
     const dy = otherParticle.y - particle.y
     const distance = Math.sqrt(dx * dx + dy * dy)
 
-    const maxConnectionDistance = 100 // 最大连接距离
+    const maxConnectionDistance = 80 // 减小最大连接距离
     if (distance < maxConnectionDistance) {
       connections.push({
         particle: otherParticle,
@@ -222,7 +222,7 @@ function drawConnections(particle) {
     const distance = conn.distance
 
     // 根据距离计算透明度
-    const opacity = ((100 - distance) / 100) * 0.4 // 降低透明度，减少视觉负担
+    const opacity = ((80 - distance) / 80) * 0.3 // 降低透明度，减少视觉负担
 
     // 创建连接线条
     const line = document.createElement("div")
@@ -238,7 +238,6 @@ function drawConnections(particle) {
       pointerEvents: "none",
       opacity: opacity,
       zIndex: "0",
-      willChange: "opacity", // 提示浏览器该元素将要改变
     })
 
     container.value.appendChild(line)

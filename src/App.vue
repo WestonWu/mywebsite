@@ -209,13 +209,33 @@ button,
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  padding: 8px 16px;
+  padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
   transition: all var(--animation-duration) var(--animation-timing);
   backdrop-filter: blur(4px);
   position: relative;
   overflow: hidden;
+}
+
+/* 触摸目标优化 - 确保所有可交互元素符合WCAG标准（至少44x44像素） */
+button,
+.btn,
+a[href],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+select,
+textarea,
+.clickable {
+  /* 确保触摸目标大小至少为44x44像素 */
+  min-width: 44px;
+  min-height: 44px;
+  /* 优化触摸交互 */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  /* 确保足够的点击区域 */
+  padding: 8px 12px;
 }
 
 button::before,
