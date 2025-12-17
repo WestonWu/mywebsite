@@ -98,10 +98,6 @@ export default defineConfig({
         chunkFileNames: "assets/js/[name]-[hash].js",
         entryFileNames: "assets/js/[name]-[hash].js",
         assetFileNames: "assets/[ext]/[name]-[hash].[ext]",
-        // 配置长期缓存
-        cacheControl: "public, max-age=31536000, immutable",
-        // 配置资源哈希长度
-        hashLength: 8,
       },
     },
     // 启用CSS代码分割
