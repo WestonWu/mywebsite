@@ -1,5 +1,8 @@
 // 天气API请求逻辑封装
 
+// 导入pinyin-pro库
+import { pinyin } from "pinyin-pro"
+
 export function useWeatherApi() {
   // Open-Meteo API配置（无需API密钥）
   const WEATHER_API_BASE_URL = import.meta.env.VITE_WEATHER_API_BASE_URL || "https://api.open-meteo.com/v1/forecast"
@@ -21,27 +24,72 @@ export function useWeatherApi() {
     { value: "tianjin", label: "天津", lat: 39.3434, lon: 117.3616 },
   ]
 
+  // 添加中文转拼音辅助函数
+  const chineseToPinyin = (text) => {
+    // 使用pinyin-pro转换中文为拼音
+    try {
+      // 检查是否包含中文字符
+      const hasChinese = /[\u4e00-\u9fa5]/.test(text)
+
+      // 如果没有中文字符，直接返回原文本
+      if (!hasChinese) {
+        return text
+      }
+
+      // 使用pinyin-pro的无声调模式，返回小写拼音，移除空格
+      const result = pinyin(text, {
+        tone: false, // 无声调
+        type: "string", // 返回字符串
+        style: "normal", // 普通风格
+        removeNonZh: false, // 不移除非中文字符，保留原字符
+      })
+
+      // 移除空格，转换为小写，确保符合API要求
+      const finalResult = result.replace(/\s+/g, "").toLowerCase()
+
+      return finalResult
+    } catch (error) {
+      console.error("中文转拼音失败:", error)
+      // 转换失败时返回原文本
+      return text
+    }
+  }
+
   // 城市搜索API
-  const searchCities = async (query, limit = 10) => {
-    if (!query.trim()) {
+  const searchCities = async (query, limit = 15) => {
+    const trimmedQuery = query.trim()
+
+    if (!trimmedQuery) {
       return defaultCities
     }
 
     try {
-      // 设置最大限制，避免返回过多结果
-      const safeLimit = Math.min(limit, 20)
-      const url = `${GEO_API_BASE_URL}?name=${encodeURIComponent(query)}&count=${safeLimit}&language=zh&format=json`
+      // 设置最大限制，增加返回结果数量
+      const safeLimit = Math.min(limit, 30) // 增加到30条，提高找到目标城市的概率
+
+      // 使用中文转拼音函数处理搜索词（该函数已包含中文字符判断）
+      const processedQuery = chineseToPinyin(trimmedQuery)
+
+      // 直接使用处理后的查询词构建单个URL
+      const url = `${GEO_API_BASE_URL}?name=${encodeURIComponent(
+        processedQuery
+      )}&count=${safeLimit}&language=zh&format=json&exact=false&country_codes=CN`
+
+      let results = []
+
       const response = await fetch(url)
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      if (response.ok) {
+        const data = await response.json()
+
+        if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+          results = data.results
+        }
       }
 
-      const data = await response.json()
-
       // 转换数据格式为 { value, label, lat, lon } 格式
-      if (data.results && Array.isArray(data.results)) {
-        return data.results.map((city, index) => {
+      if (results.length > 0) {
+        const searchResults = results.map((city, index) => {
           // 使用城市名+行政区划+经纬度+时间戳生成绝对唯一value
           // 确保不同城市不会产生相同value，避免重复键错误
           const uniqueValue = `${city.name.toLowerCase().replace(/\s+/g, "-")}${
@@ -54,11 +102,46 @@ export function useWeatherApi() {
             label: `${city.name}${city.admin1 ? `, ${city.admin1}` : ""}${city.country ? `, ${city.country}` : ""}`,
             lat: city.latitude,
             lon: city.longitude,
+            feature_code: city.feature_code, // 保留feature_code信息
           }
+        })
+
+        // 二次排序，优先显示名称匹配的城市
+        return searchResults.sort((a, b) => {
+          // 确保 a 和 b 存在
+          if (!a || !b) return 0
+
+          // 确保 label 存在，提供默认值
+          const aLabel = a.label || ""
+          const bLabel = b.label || ""
+
+          // 优先显示包含搜索词的城市，添加空值检查
+          const aContains = aLabel.includes(trimmedQuery)
+          const bContains = bLabel.includes(trimmedQuery)
+          if (aContains && !bContains) return -1
+          if (!aContains && bContains) return 1
+
+          // 其次按特征码排序，优先显示大城市（PPLC > PPLA > PPL）
+          const featureCodePriority = {
+            PPLC: 0, // 首都/直辖市
+            PPLA: 1, // 省会城市
+            PPLA2: 2, // 地级市
+            PPLA3: 3, // 县级市
+            PPL: 4, // 镇/村
+          }
+
+          // 直接使用映射后的feature_code信息，避免再次查找原始数据
+          const aPriority = featureCodePriority[a.feature_code] || 99
+          const bPriority = featureCodePriority[b.feature_code] || 99
+          if (aPriority !== bPriority) return aPriority - bPriority
+
+          // 最后按名称长度排序，添加空值检查
+          return (aLabel.length || 0) - (bLabel.length || 0)
         })
       }
 
-      return []
+      // 如果所有搜索方式都没有结果，返回默认城市列表
+      return defaultCities
     } catch (error) {
       console.error("城市搜索失败:", error)
       return defaultCities
@@ -82,7 +165,6 @@ export function useWeatherApi() {
       }
 
       const data = await response.json()
-      console.log("Nominatim API响应数据:", data)
 
       if (data && data.address) {
         const address = data.address
