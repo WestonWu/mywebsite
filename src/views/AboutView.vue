@@ -116,10 +116,11 @@
 .about-text p {
   margin-bottom: 1rem;
   line-height: 1.8;
+  color: var(--text-secondary);
 }
 
 .image-placeholder {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: var(--gradient-primary);
   height: 100%;
   min-height: 200px;
   border-radius: var(--border-radius);
@@ -129,12 +130,14 @@
   color: white;
   font-size: 1.5rem;
   font-weight: bold;
+  box-shadow: 0 4px 15px rgba(58, 134, 255, 0.2);
 }
 
 .skills h2 {
   margin: 2rem 0 1rem;
   position: relative;
   display: inline-block;
+  color: var(--text-primary);
 }
 
 .skills h2::after {
@@ -144,7 +147,7 @@
   left: 0;
   width: 40px;
   height: 2px;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  background: var(--gradient-primary);
 }
 
 /* 时间线样式 */
@@ -164,7 +167,7 @@
   left: 0;
   width: 2px;
   height: 100%;
-  background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+  background: var(--gradient-primary);
 }
 
 .timeline-item {
@@ -175,28 +178,37 @@
 
 .timeline-date {
   font-weight: bold;
-  color: var(--primary-color);
+  color: var(--accent-color);
   margin-bottom: 0.5rem;
+  font-size: 1rem;
 }
 
 .timeline-content {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
   padding: 1.5rem;
   border-radius: var(--border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--shadow-color);
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.timeline-content:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--shadow-color);
 }
 
 .timeline-content h3 {
   color: var(--text-primary) !important;
   margin-bottom: 0.5rem;
+  font-size: 1.2rem;
 }
 
 .timeline-content p {
   color: var(--text-secondary) !important;
   margin-bottom: 0.8rem;
+  line-height: 1.7;
 }
 
 .timeline-content::before {
@@ -204,11 +216,12 @@
   position: absolute;
   top: 1rem;
   left: -1.5rem;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: white;
-  border: 2px solid var(--primary-color);
+  background: var(--card-bg);
+  border: 3px solid var(--accent-color);
+  box-shadow: 0 0 0 2px var(--card-bg);
 }
 
 .company {
@@ -229,28 +242,37 @@
 }
 
 .education-item {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
   padding: 1.5rem;
   border-radius: var(--border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px var(--shadow-color);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.education-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--shadow-color);
 }
 
 .education-item h3 {
   color: var(--text-primary) !important;
   margin-bottom: 0.5rem;
+  font-size: 1.2rem;
 }
 
 .education-item p {
   color: var(--text-secondary) !important;
   margin-bottom: 0.8rem;
+  line-height: 1.7;
 }
 
 .education-date {
   font-weight: bold;
-  color: var(--primary-color);
+  color: var(--accent-color);
   margin-bottom: 0.5rem;
+  font-size: 1rem;
 }
 
 .degree,
@@ -271,12 +293,5 @@
   .education-items {
     grid-template-columns: 1fr;
   }
-}
-
-/* 自定义CSS变量 */
-:root {
-  --primary-color: var(--accent-color);
-  --secondary-color: var(--accent-color-hover);
-  --border-radius: 8px;
 }
 </style>

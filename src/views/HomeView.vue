@@ -360,9 +360,9 @@ onMounted(() => {
   max-width: 800px;
   margin: 0 auto;
   padding: 1rem;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: var(--card-bg);
   border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px var(--shadow-color);
   /* 设置固定高度，避免组件切换时页面滑动 */
   min-height: 420px;
   height: 420px;

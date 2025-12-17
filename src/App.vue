@@ -149,29 +149,31 @@ body {
   /* 深色模式变量 */
   --primary-bg: #000000;
   --secondary-bg: #1a1a2e;
-  --text-primary: rgba(255, 255, 255, 0.95);
-  --text-secondary: rgba(255, 255, 255, 0.75);
+  --text-primary: rgba(255, 255, 255, 1);
+  --text-secondary: rgba(255, 255, 255, 0.85);
   --accent-color: #3a86ff;
   --accent-color-hover: #1a6dff;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --hover-bg: rgba(255, 255, 255, 0.1);
-  --active-bg: rgba(255, 255, 255, 0.15);
-  --card-bg: rgba(255, 255, 255, 0.05);
+  --border-color: rgba(255, 255, 255, 0.2);
+  --hover-bg: rgba(255, 255, 255, 0.15);
+  --active-bg: rgba(255, 255, 255, 0.2);
+  --card-bg: rgba(255, 255, 255, 0.08);
   --shadow-color: rgba(0, 0, 0, 0.3);
   --gradient-primary: linear-gradient(135deg, #3a86ff, #1a6dff);
+  --focus-color: #3a86ff;
 }
 
 /* 浅色模式变量 */
 .light-mode {
   --primary-bg: #ffffff;
   --secondary-bg: #f5f7fa;
-  --text-primary: rgba(0, 0, 0, 0.95);
-  --text-secondary: rgba(0, 0, 0, 0.75);
-  --border-color: rgba(0, 0, 0, 0.1);
-  --hover-bg: rgba(0, 0, 0, 0.05);
-  --active-bg: rgba(0, 0, 0, 0.1);
-  --card-bg: rgba(0, 0, 0, 0.02);
-  --shadow-color: rgba(0, 0, 0, 0.1);
+  --text-primary: rgba(0, 0, 0, 1);
+  --text-secondary: rgba(0, 0, 0, 0.85);
+  --border-color: rgba(0, 0, 0, 0.2);
+  --hover-bg: rgba(0, 0, 0, 0.08);
+  --active-bg: rgba(0, 0, 0, 0.12);
+  --card-bg: rgba(0, 0, 0, 0.03);
+  --shadow-color: rgba(0, 0, 0, 0.15);
+  --focus-color: #1a6dff;
 }
 
 #app {
@@ -206,16 +208,17 @@ div {
 /* 通用按钮样式 */
 button,
 .btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: var(--border-radius);
   cursor: pointer;
   transition: all var(--animation-duration) var(--animation-timing);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
   position: relative;
   overflow: hidden;
+  font-weight: 500;
 }
 
 /* 触摸目标优化 - 确保所有可交互元素符合WCAG标准（至少44x44像素） */
@@ -296,6 +299,12 @@ a:hover {
 
 a:hover::after {
   width: 100%;
+}
+
+a:focus {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* 输入框样式 */
