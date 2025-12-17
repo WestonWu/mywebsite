@@ -653,15 +653,35 @@ export default {
     // 预加载工具组件
     preloadToolComponent(toolId) {
       // 如果组件已经预加载过，直接返回
-      if (this.preloadedComponents[toolId]) {
+      if (this.preloadedComponents[toolId] === 'loaded') {
+        return
+      }
+      if (this.preloadedComponents[toolId] === 'loading') {
         return
       }
 
       // 获取组件配置
       const component = this.toolComponents[toolId]
       if (component) {
-        // 直接使用组件，不再调用它（因为它已经是一个异步组件，不是函数）
-        this.preloadedComponents[toolId] = component
+        // 标记为加载中
+        this.preloadedComponents[toolId] = 'loading'
+        
+        // 尝试获取异步组件的loader函数并预加载
+        if (component.__asyncLoader) {
+          // 调用loader函数预加载组件
+          component.__asyncLoader()
+            .then(() => {
+              // 标记为已加载
+              this.preloadedComponents[toolId] = 'loaded'
+            })
+            .catch(() => {
+              // 加载失败，清理状态
+              delete this.preloadedComponents[toolId]
+            })
+        } else {
+          // 如果没有loader函数，标记为已加载
+          this.preloadedComponents[toolId] = 'loaded'
+        }
       }
     },
     // 打开工具模态框
