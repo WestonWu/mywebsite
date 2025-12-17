@@ -44,19 +44,14 @@ export default {
     // 根据日期获取季节
     const getSeason = (date) => {
       const month = date.getMonth() + 1 // JavaScript 月份从 0 开始
-      console.log(`当前月份: ${month}`)
 
       if (month >= 3 && month <= 5) {
-        console.log(`返回季节: ${SEASONS.SPRING}`)
         return SEASONS.SPRING
       } else if (month >= 6 && month <= 8) {
-        console.log(`返回季节: ${SEASONS.SUMMER}`)
         return SEASONS.SUMMER
       } else if (month >= 9 && month <= 11) {
-        console.log(`返回季节: ${SEASONS.AUTUMN}`)
         return SEASONS.AUTUMN
       } else {
-        console.log(`返回季节: ${SEASONS.WINTER}`)
         return SEASONS.WINTER
       }
     }
@@ -64,19 +59,14 @@ export default {
     // 根据时间获取时间段
     const getTimePeriod = (date) => {
       const hour = date.getHours()
-      console.log(`当前小时: ${hour}`)
 
       if (hour >= 6 && hour < 12) {
-        console.log(`返回时间段: ${TIME_PERIODS.MORNING}`)
         return TIME_PERIODS.MORNING
       } else if (hour >= 12 && hour < 18) {
-        console.log(`返回时间段: ${TIME_PERIODS.AFTERNOON}`)
         return TIME_PERIODS.AFTERNOON
       } else if (hour >= 18 && hour < 22) {
-        console.log(`返回时间段: ${TIME_PERIODS.EVENING}`)
         return TIME_PERIODS.EVENING
       } else {
-        console.log(`返回时间段: ${TIME_PERIODS.NIGHT}`)
         return TIME_PERIODS.NIGHT
       }
     }
@@ -93,22 +83,18 @@ export default {
     // 预加载单张图片
     const preloadImage = (url) => {
       if (imageCache.has(url)) {
-        console.log(`图片已缓存，跳过预加载: ${url}`)
         return Promise.resolve()
       }
 
       return new Promise((resolve, reject) => {
-        console.log(`开始预加载: ${url}`)
         const img = new Image()
 
         img.onload = () => {
-          console.log(`预加载成功: ${url}`)
           imageCache.add(url)
           resolve()
         }
 
         img.onerror = (error) => {
-          console.warn(`预加载失败: ${url}`, error)
           // 确保返回有意义的错误信息
           reject(new Error(`Failed to load image: ${url}`))
         }
@@ -119,7 +105,6 @@ export default {
 
     // 预加载当前季节的所有图片
     const preloadSeasonImages = async (season) => {
-      console.log(`开始预加载 ${season} 季节的所有图片`)
       const timePeriods = Object.values(TIME_PERIODS)
       const promises = timePeriods.map((timePeriod) => {
         const url = generateBackgroundUrl(season, timePeriod)
@@ -129,26 +114,13 @@ export default {
       // 直接使用 Promise.allSettled，不需要在map中处理
       const results = await Promise.allSettled(promises)
 
-      // 记录预加载结果
-      results.forEach((result, index) => {
-        const url = generateBackgroundUrl(season, timePeriods[index])
-        if (result.status === "fulfilled") {
-          console.log(`预加载成功: ${url}`)
-        } else {
-          console.warn(`预加载失败: ${url}`, result.reason?.message || "未知错误")
-        }
-      })
-
       return results
     }
 
     // 切换背景图片的辅助函数
     const changeBackground = (newUrl) => {
-      console.log(`切换背景图片: ${newUrl}`)
-
       // 确保newUrl不为空
       if (!newUrl) {
-        console.error("切换背景图片失败: newUrl为空")
         return
       }
 
@@ -166,19 +138,15 @@ export default {
     // 更新背景图片
     const updateBackground = () => {
       const now = new Date()
-      console.log(`当前时间: ${now}`)
 
       const season = getSeason(now)
       const timePeriod = getTimePeriod(now)
-      console.log(`当前季节: ${season}, 当前时间段: ${timePeriod}`)
 
       // 获取当前时间段的图片 URL
       const localUrl = generateBackgroundUrl(season, timePeriod)
-      console.log(`本地图片 URL: ${localUrl}`)
 
       // 准备占位符图片 URL
       const placeholderUrl = `https://picsum.photos/1920/1080?season=${season}&time=${timePeriod}&t=${Date.now()}`
-      console.log(`占位符图片 URL: ${placeholderUrl}`)
 
       // 直接使用本地图片，同时准备占位符作为备选
       changeBackground(localUrl)
@@ -186,27 +154,23 @@ export default {
       // 异步验证本地图片是否存在，如果不存在则切换到占位符
       const img = new Image()
       img.onload = () => {
-        console.log(`本地图片验证成功: ${localUrl}`)
         imageCache.add(localUrl)
       }
-      img.onerror = (error) => {
-        console.warn(`本地图片不存在: ${localUrl}，切换到占位符`, error)
+      img.onerror = () => {
         // 如果本地图片不存在，切换到占位符
         changeBackground(placeholderUrl)
       }
       img.src = localUrl
 
       // 异步预加载当前季节的其他图片，不阻塞主流程
-      preloadSeasonImages(season).catch((error) => {
-        console.warn("预加载图片时出现问题:", error)
+      preloadSeasonImages(season).catch(() => {
+        // 静默处理预加载错误
       })
     }
 
     // 添加watch监听器，确保currentBackgroundUrl不会为空
-    watch(currentBackgroundUrl, (newUrl, oldUrl) => {
-      console.log(`currentBackgroundUrl变化: ${oldUrl} -> ${newUrl}`)
+    watch(currentBackgroundUrl, (newUrl) => {
       if (!newUrl) {
-        console.error("currentBackgroundUrl为空，恢复默认图片")
         // 如果currentBackgroundUrl为空，恢复默认图片
         currentBackgroundUrl.value = "https://picsum.photos/1920/1080?default=true"
       }
@@ -215,7 +179,6 @@ export default {
     // 初始化和清理
     onMounted(() => {
       // 初始加载背景
-      console.log("初始化加载背景")
       updateBackground()
 
       // 每小时更新一次背景，确保时间变化时背景也随之变化
