@@ -125,7 +125,7 @@ export default {
   },
   setup() {
     // 初始化API和工具
-    const { getCities, getSunriseSunset } = useWeatherApi()
+    const { getCities, getSunriseSunset, reverseGeocode } = useWeatherApi()
     const { generateCacheKey, withCache } = useWeatherCache()
     const { getCurrentPosition } = useGeolocation()
 
@@ -211,13 +211,17 @@ export default {
 
         const { latitude, longitude } = positionResult.data
 
+        // 通过逆地理编码获取具体位置名称
+        const locationInfo = await reverseGeocode(latitude, longitude)
+        console.log("逆地理编码结果:", locationInfo)
+
         // 使用坐标查询天气数据
         await fetchSunriseSunsetData({ lat: latitude, lon: longitude })
 
         // 保存当前位置信息
         currentLocationCity.value = {
-          value: `lat_${latitude}_lon_${longitude}`,
-          label: "当前位置",
+          value: locationInfo ? locationInfo.value : `lat_${latitude}_lon_${longitude}`,
+          label: locationInfo ? locationInfo.label : "当前位置",
           lat: latitude,
           lon: longitude,
         }
