@@ -127,6 +127,8 @@ export default {
       "precipitation-conversion": defineAsyncComponent(() =>
         import("../components/tools/ToolPrecipitationConversion.vue")
       ),
+      // 健康工具组件
+      "fitness-timer": defineAsyncComponent(() => import("../components/tools/ToolFitnessTimer.vue")),
     }
 
     const { getFavorites, addFavorite, removeFavorite, getRecentUsage, addToRecent } = useToolFavorites()
@@ -182,6 +184,7 @@ export default {
         { id: "color", name: "颜色工具", icon: "🎨" },
         { id: "converter", name: "转换工具", icon: "🔄" },
         { id: "weather", name: "天气工具", icon: "🌤️" },
+        { id: "health", name: "健康工具", icon: "💪" },
       ],
       // 工具列表
       tools: [
@@ -304,6 +307,14 @@ export default {
           description: "毫米与英寸降水量单位转换",
           icon: "💧",
           category: "weather",
+        },
+        // 健康工具
+        {
+          id: "fitness-timer",
+          name: "健身计时工具",
+          description: "任意时长健身训练的计时计数工具，支持多种动作配置和音效提醒",
+          icon: "🏋️‍♂️",
+          category: "health",
         },
       ],
       selectedToolId: "qr-code", // 默认选中URL转二维码工具
@@ -586,6 +597,24 @@ export default {
             { key: "Ctrl + S", description: "交换单位" },
           ],
           tips: ["支持小数和整数输入", "提供不同降水等级的参考标准", "转换结果精确到小数点后两位"],
+        },
+        "fitness-timer": {
+          title: "健身计时工具帮助",
+          description: "用于任意时长健身训练的计时计数工具，支持多种动作配置和音效提醒。",
+          usageSteps: [
+            "设置总训练时长和组间休息时间",
+            "配置健身动作，包括动作名称、组数和次数",
+            "点击开始按钮开始训练",
+            "按照语音提醒完成每个动作",
+            "训练结束后点击重置按钮重新开始",
+          ],
+          shortcuts: [{ key: "空格", description: "开始/暂停训练" }],
+          tips: [
+            "可以使用预设动作模板快速配置训练计划",
+            "训练过程中可以随时暂停和继续",
+            "语音提醒使用浏览器内置的Web Speech API",
+            "建议根据自己的体能水平调整训练时长和强度",
+          ],
         },
       },
     }
