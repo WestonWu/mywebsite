@@ -7,18 +7,12 @@
     <div class="tool-body">
       <!-- 左侧：配置区域 -->
       <div class="config-section">
-        <!-- 总时长设置 -->
+        <!-- 总时长显示 -->
         <div class="option-group">
-          <label for="total-duration">总训练时长 (分钟)</label>
-          <input
-            type="number"
-            id="total-duration"
-            v-model.number="totalDuration"
-            min="1"
-            max="120"
-            class="number-input"
-            @input="updateConfig"
-          />
+          <label>预计总训练时长</label>
+          <div class="total-time-display">
+            {{ formattedTotalTime }}
+          </div>
         </div>
 
         <!-- 休息时间设置 -->
@@ -40,42 +34,66 @@
           <label>健身动作配置</label>
           <div class="exercise-list">
             <div v-for="(exercise, index) in exercises" :key="index" class="exercise-item">
-              <div class="exercise-inputs">
-                <input
-                  type="text"
-                  v-model="exercise.name"
-                  placeholder="动作名称"
-                  class="exercise-name-input"
-                  @input="updateConfig"
-                />
-                <input
-                  type="number"
-                  v-model.number="exercise.sets"
-                  placeholder="组数"
-                  min="1"
-                  max="10"
-                  class="exercise-sets-input"
-                  @input="updateConfig"
-                />
-                <div class="exercise-reps-type">
+              <div class="exercise-header">
+                <div class="exercise-name-container">
+                  <label class="exercise-label">动作名称</label>
                   <input
-                    type="number"
-                    v-model.number="exercise.reps"
-                    :placeholder="exercise.type === 'reps' ? '次数' : '秒数'"
-                    min="1"
-                    max="120"
-                    class="exercise-reps-input"
+                    type="text"
+                    v-model="exercise.name"
+                    placeholder="输入动作名称"
+                    class="exercise-name-input"
                     @input="updateConfig"
                   />
-                  <select v-model="exercise.type" class="exercise-type-select" @change="updateConfig">
-                    <option value="reps">次</option>
-                    <option value="time">秒</option>
-                  </select>
+                </div>
+                <button class="remove-exercise-btn" @click="removeExercise(index)" :disabled="exercises.length <= 1">
+                  ✕
+                </button>
+              </div>
+
+              <div class="exercise-details">
+                <div class="exercise-field">
+                  <label class="exercise-label">组数</label>
+                  <input
+                    type="number"
+                    v-model.number="exercise.sets"
+                    min="1"
+                    max="10"
+                    class="exercise-sets-input"
+                    @input="updateConfig"
+                  />
+                </div>
+
+                <div class="exercise-field exercise-reps-type">
+                  <label class="exercise-label">{{ exercise.type === "reps" ? "次数" : "秒数" }}</label>
+                  <div class="exercise-reps-row">
+                    <input
+                      type="number"
+                      v-model.number="exercise.reps"
+                      min="1"
+                      max="120"
+                      class="exercise-reps-input"
+                      @input="updateConfig"
+                    />
+                    <select v-model="exercise.type" class="exercise-type-select" @change="updateConfig">
+                      <option value="reps">次</option>
+                      <option value="time">秒</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="exercise-field">
+                  <label class="exercise-label">每次用时（秒）</label>
+                  <input
+                    type="number"
+                    v-model.number="exercise.durationPerRep"
+                    min="0.1"
+                    max="10"
+                    step="0.1"
+                    class="exercise-duration-input"
+                    @input="updateConfig"
+                  />
                 </div>
               </div>
-              <button class="remove-exercise-btn" @click="removeExercise(index)" :disabled="exercises.length <= 1">
-                ✕
-              </button>
             </div>
           </div>
           <button class="add-exercise-btn" @click="addExercise">+ 添加动作</button>
@@ -149,10 +167,10 @@ export default {
       totalDuration: 30, // 总训练时长（分钟）
       restTime: 60, // 组间休息时间（秒）
       exercises: [
-        { name: "俯卧撑", sets: 4, reps: 10, type: "reps" },
-        { name: "深蹲", sets: 4, reps: 20, type: "reps" },
-        { name: "高抬腿", sets: 4, reps: 40, type: "reps" },
-        { name: "平板支撑", sets: 3, reps: 30, type: "time" }, // 平板支撑改为计时模式
+        { name: "俯卧撑", sets: 4, reps: 10, durationPerRep: 1, type: "reps" },
+        { name: "深蹲", sets: 4, reps: 20, durationPerRep: 1, type: "reps" },
+        { name: "高抬腿", sets: 4, reps: 40, durationPerRep: 1, type: "reps" },
+        { name: "平板支撑", sets: 3, reps: 30, durationPerRep: 1, type: "time" }, // 平板支撑改为计时模式
       ],
 
       // 训练状态
@@ -168,27 +186,29 @@ export default {
       setStartTime: 0, // 当前组开始时间
       timer: null, // 主定时器
       repTimer: null, // 动作次数定时器
+      restTimer: null, // 休息定时器
+      remainingRestTime: 0, // 剩余休息时间（秒）
 
       // 预设动作模板
       presets: {
         basic: [
-          { name: "斜板俯卧撑", sets: 4, reps: 12, type: "reps" },
-          { name: "深蹲", sets: 4, reps: 20, type: "reps" },
-          { name: "高抬腿", sets: 4, reps: 40, type: "reps" },
-          { name: "平板支撑", sets: 3, reps: 30, type: "time" },
+          { name: "斜板俯卧撑", sets: 4, reps: 12, durationPerRep: 1, type: "reps" },
+          { name: "深蹲", sets: 4, reps: 20, durationPerRep: 1, type: "reps" },
+          { name: "高抬腿", sets: 4, reps: 40, durationPerRep: 1, type: "reps" },
+          { name: "平板支撑", sets: 3, reps: 30, durationPerRep: 1, type: "time" },
         ],
         "full-body": [
-          { name: "俯卧撑", sets: 4, reps: 10, type: "reps" },
-          { name: "深蹲", sets: 4, reps: 20, type: "reps" },
-          { name: "箭步蹲", sets: 4, reps: 15, type: "reps" },
-          { name: "平板支撑", sets: 3, reps: 30, type: "time" },
-          { name: "仰卧起坐", sets: 4, reps: 25, type: "reps" },
+          { name: "俯卧撑", sets: 4, reps: 10, durationPerRep: 1, type: "reps" },
+          { name: "深蹲", sets: 4, reps: 20, durationPerRep: 1, type: "reps" },
+          { name: "箭步蹲", sets: 4, reps: 15, durationPerRep: 1, type: "reps" },
+          { name: "平板支撑", sets: 3, reps: 30, durationPerRep: 1, type: "time" },
+          { name: "仰卧起坐", sets: 4, reps: 25, durationPerRep: 1, type: "reps" },
         ],
         core: [
-          { name: "平板支撑", sets: 4, reps: 40, type: "time" },
-          { name: "仰卧起坐", sets: 4, reps: 30, type: "reps" },
-          { name: "侧平板支撑", sets: 4, reps: 25, type: "time" },
-          { name: "俄罗斯转体", sets: 4, reps: 30, type: "reps" },
+          { name: "平板支撑", sets: 4, reps: 40, durationPerRep: 1, type: "time" },
+          { name: "仰卧起坐", sets: 4, reps: 30, durationPerRep: 1, type: "reps" },
+          { name: "侧平板支撑", sets: 4, reps: 25, durationPerRep: 1, type: "time" },
+          { name: "俄罗斯转体", sets: 4, reps: 30, durationPerRep: 1, type: "reps" },
         ],
       },
     }
@@ -217,7 +237,7 @@ export default {
     // 当前动作信息
     currentExerciseInfo() {
       if (this.currentStatus === "resting") {
-        return "休息时间"
+        return `休息时间：${this.remainingRestTime}秒`
       }
       return this.currentExercise?.name || "准备开始"
     },
@@ -247,6 +267,13 @@ export default {
       const elapsed = this.totalTime - this.remainingTime
       return Math.round((elapsed / this.totalTime) * 100)
     },
+
+    // 格式化总时长
+    formattedTotalTime() {
+      const minutes = Math.floor(this.totalTime / 60)
+      const seconds = Math.round(this.totalTime % 60)
+      return `${minutes}分${seconds}秒`
+    },
   },
   methods: {
     // 更新配置
@@ -257,13 +284,31 @@ export default {
 
     // 计算总时间
     calculateTotalTime() {
-      this.totalTime = this.totalDuration * 60
+      // 计算每个动作的总训练时间
+      let trainingTime = 0
+      let restCount = 0
+
+      // 计算训练时间
+      for (const exercise of this.exercises) {
+        trainingTime += exercise.sets * exercise.reps * exercise.durationPerRep
+        restCount += exercise.sets
+      }
+
+      // 计算休息时间（每组之间休息）
+      const totalRestTime = (restCount - this.exercises.length) * this.restTime
+
+      // 总时长 = 训练时间 + 休息时间
+      // 不再单独计算语音播报时间，因为语音播报时间已经包含在训练和休息时间内
+      // 训练时间：每个动作的次数 × 每次用时
+      // 休息时间：休息次数 × 休息时长
+      // 语音播报会在训练和休息时间内进行，不会额外增加总时长
+      this.totalTime = trainingTime + totalRestTime
       this.remainingTime = this.totalTime
     },
 
     // 添加动作
     addExercise() {
-      this.exercises.push({ name: "新动作", sets: 3, reps: 10, type: "reps" })
+      this.exercises.push({ name: "新动作", sets: 3, reps: 10, durationPerRep: 1, type: "reps" })
       this.updateConfig()
     },
 
@@ -311,6 +356,10 @@ export default {
                     exercise.type = "reps"
                   }
                 }
+                // 为没有durationPerRep属性的动作添加默认值
+                if (exercise.durationPerRep === undefined || exercise.durationPerRep === null) {
+                  exercise.durationPerRep = 1
+                }
                 return exercise
               })
             if (validExercises.length > 0) {
@@ -327,7 +376,6 @@ export default {
     saveConfig() {
       try {
         const config = {
-          totalDuration: this.totalDuration,
           restTime: this.restTime,
           exercises: this.exercises,
         }
@@ -346,21 +394,20 @@ export default {
       this.currentStatus = "training"
       this.calculateTotalTime()
       this.calculateRepTime()
+
+      // 记录训练开始时间，用于精确计算剩余时间
       this.setStartTime = Date.now()
 
       // 初始语音播报：包含动作名称
       this.speak(`${this.currentExercise.name}开始`)
 
-      // 延迟启动定时器，确保语音播报完成后才正式开始计时
-      setTimeout(() => {
-        // 开始主定时器
-        this.timer = setInterval(() => {
-          this.updateTimer()
-        }, 1000)
+      // 开始主定时器（立即开始，不延迟）
+      this.timer = setInterval(() => {
+        this.updateTimer()
+      }, 1000)
 
-        // 开始动作次数定时器
-        this.startRepTimer()
-      }, 1000) // 延迟1秒，确保语音播报完成后开始计时
+      // 立即启动动作次数定时器，确保与主定时器同步
+      this.startRepTimer()
     },
 
     // 暂停训练
@@ -370,8 +417,10 @@ export default {
       this.isPaused = true
       clearInterval(this.timer)
       clearInterval(this.repTimer)
+      clearInterval(this.restTimer)
       this.timer = null
       this.repTimer = null
+      this.restTimer = null
     },
 
     // 继续训练
@@ -400,6 +449,7 @@ export default {
       this.currentExerciseIndex = 0
       this.currentSet = 1
       this.currentRep = 1
+      this.remainingRestTime = 0
       this.calculateTotalTime()
 
       // 清除定时器
@@ -411,25 +461,26 @@ export default {
         clearInterval(this.repTimer)
         this.repTimer = null
       }
+      if (this.restTimer) {
+        clearInterval(this.restTimer)
+        this.restTimer = null
+      }
     },
 
     // 更新定时器
     updateTimer() {
-      this.remainingTime--
+      // 精确计算剩余时间，不受语音播报影响
+      const elapsed = Math.floor((Date.now() - this.setStartTime) / 1000)
+      this.remainingTime = Math.max(0, this.totalTime - elapsed)
 
-      // 检查训练是否结束
-      if (this.remainingTime <= 0) {
-        this.finishTraining()
-        return
-      }
+      // 总时长仅作参考，不再自动结束训练
+      // 训练结束由所有动作完成后自动触发
     },
 
     // 计算每次动作的时间
     calculateRepTime() {
-      const totalExercises = this.exercises.reduce((total, exercise) => total + exercise.sets * exercise.reps, 0)
-      const totalRestTime = (this.totalSets - this.exercises.length) * this.restTime
-      const totalTrainingTime = this.totalDuration * 60 - totalRestTime
-      this.repTime = (totalTrainingTime * 1000) / totalExercises
+      // 根据当前动作的durationPerRep字段计算每次动作的时间
+      this.repTime = this.currentExercise.durationPerRep * 1000
     },
 
     // 开始动作次数定时器
@@ -438,21 +489,46 @@ export default {
         clearInterval(this.repTimer)
       }
 
-      // 根据动作类型设置不同的播报间隔
-      const interval = this.currentExercise.type === "time" ? 1000 : this.repTime
-      this.repTimer = setInterval(() => {
-        this.nextRep()
-      }, interval)
+      // 根据动作类型设置不同的间隔
+      // 对于次数型动作，使用设定的每次用时作为间隔
+      // 对于时间型动作，使用1秒作为间隔
+      const interval = this.currentExercise.type === "time" ? 1000 : this.currentExercise.durationPerRep * 1000
+
+      // 初始化当前次数
+      this.currentRep = 1
+
+      // 立即执行第一次动作
+      this.speak(`${this.currentRep}`)
+      this.currentRep++
+
+      // 使用setTimeout递归调用，确保每个动作的间隔准确
+      const executeNextRep = () => {
+        this.repTimer = setTimeout(() => {
+          // 执行当前次数的动作
+          this.speak(`${this.currentRep}`)
+          this.currentRep++
+
+          // 检查当前组是否完成
+          if (this.currentRep > this.currentExerciseReps) {
+            this.repTimer = null
+            this.nextSet()
+          } else {
+            // 继续执行下一次动作
+            executeNextRep()
+          }
+        }, interval)
+      }
+
+      // 开始执行后续动作
+      executeNextRep()
     },
 
     // 下一次动作
     nextRep() {
-      // 仅播报数字，不包含动作名称
+      // 直接执行当前次数的动作
       this.speak(`${this.currentRep}`)
-
       this.currentRep++
 
-      // 检查当前组是否完成
       if (this.currentRep > this.currentExerciseReps) {
         this.nextSet()
       }
@@ -545,17 +621,41 @@ export default {
       clearInterval(this.repTimer)
       this.repTimer = null
 
-      // 语音提醒
+      // 初始化剩余休息时间
+      this.remainingRestTime = this.restTime
+
+      // 语音提醒：休息开始
       this.speak(`休息时间 ${this.restTime} 秒`)
 
-      // 休息定时器
-      setTimeout(() => {
-        this.currentStatus = "training"
-        // 延迟启动动作次数定时器，确保语音播报完成后开始
-        this.speak("1")
-        this.currentRep = 2
-        this.startRepTimer()
-      }, this.restTime * 1000)
+      // 记录休息开始时间，用于精确计算剩余时间
+      const restStartTime = Date.now()
+
+      // 休息倒计时定时器
+      this.restTimer = setInterval(() => {
+        // 精确计算剩余休息时间，不受语音播报影响
+        const elapsed = Math.floor((Date.now() - restStartTime) / 1000)
+        this.remainingRestTime = Math.max(0, this.restTime - elapsed)
+
+        // 只播报关键时间点，避免语音播报占用过多时间
+        if (this.remainingRestTime > 0 && (this.remainingRestTime <= 5 || this.remainingRestTime % 10 === 0)) {
+          this.speak(`${this.remainingRestTime}`)
+        }
+
+        // 检查休息是否结束
+        if (this.remainingRestTime <= 0) {
+          clearInterval(this.restTimer)
+          this.restTimer = null
+
+          // 休息结束，开始下一个动作
+          this.currentStatus = "training"
+          // 延迟启动动作次数定时器，确保语音播报完成后开始
+          this.speak("准备开始", () => {
+            // 语音播报完成后，开始下一个动作的计时
+            this.currentRep = 1
+            this.startRepTimer()
+          })
+        }
+      }, 1000)
     },
 
     // 完成训练
@@ -573,17 +673,32 @@ export default {
         clearInterval(this.repTimer)
         this.repTimer = null
       }
+      if (this.restTimer) {
+        clearInterval(this.restTimer)
+        this.restTimer = null
+      }
 
       // 语音提醒
       this.speak("训练完成！")
     },
 
     // 语音播报
-    speak(text) {
+    speak(text, onEndCallback = null) {
       if ("speechSynthesis" in window) {
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.lang = "zh-CN"
+
+        // 设置语速，确保每个数字播报时间一致
+        utterance.rate = 1.5
+
+        if (onEndCallback) {
+          utterance.onend = onEndCallback
+        }
+
         window.speechSynthesis.speak(utterance)
+      } else if (onEndCallback) {
+        // 如果不支持语音合成，立即调用回调
+        onEndCallback()
       }
     },
   },
@@ -685,6 +800,36 @@ export default {
   box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.1);
 }
 
+/* 总时长显示样式 */
+.total-time-display {
+  padding: 10px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--accent-color);
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* 每次用时输入框样式 */
+.exercise-duration-input {
+  width: 100%;
+  padding: 10px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.exercise-duration-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.1);
+}
+
 /* 动作列表 */
 .exercise-list {
   display: flex;
@@ -695,72 +840,105 @@ export default {
 
 /* 动作项 */
 .exercise-item {
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+/* 动作头部 */
+.exercise-header {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
   gap: 10px;
-  align-items: center;
-  background: var(--primary-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  padding: 10px;
 }
 
-.exercise-inputs {
-  display: flex;
-  gap: 10px;
+.exercise-name-container {
   flex: 1;
-  flex-wrap: wrap;
 }
 
-.exercise-name-input {
-  min-width: 120px;
-  flex: 2;
-  padding: 8px;
-  background: var(--primary-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  color: var(--text-primary);
-  font-size: 0.9rem;
+/* 动作详情 */
+.exercise-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
 }
 
-.exercise-sets-input {
-  min-width: 60px;
-  flex: 1;
-  padding: 8px;
-  background: var(--primary-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.exercise-reps-type {
+/* 动作字段 */
+.exercise-field {
   display: flex;
+  flex-direction: column;
   gap: 5px;
-  flex: 2;
 }
 
-.exercise-reps-input {
-  min-width: 80px;
-  flex: 2;
-  padding: 8px;
+/* 动作标签 */
+.exercise-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+
+/* 动作名称输入框 */
+.exercise-name-input {
+  width: 100%;
+  padding: 10px;
   background: var(--primary-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 1rem;
+}
+
+/* 组数输入框 */
+.exercise-sets-input {
+  width: 100%;
+  padding: 10px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  font-size: 1rem;
   text-align: center;
 }
 
-.exercise-type-select {
-  min-width: 60px;
+/* 次数/秒数区域 */
+.exercise-reps-type {
+  grid-column: span 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.exercise-reps-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* 次数/秒数输入框 */
+.exercise-reps-input {
   flex: 1;
-  padding: 8px;
+  padding: 10px;
   background: var(--primary-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 1rem;
+  text-align: center;
+}
+
+/* 类型选择器 */
+.exercise-type-select {
+  flex: 0 0 80px;
+  padding: 10px;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -1034,13 +1212,14 @@ export default {
     gap: 20px;
   }
 
-  .exercise-inputs {
-    flex-direction: column;
+  .exercise-details {
+    grid-template-columns: 1fr;
   }
 
   .exercise-name-input,
   .exercise-sets-input,
-  .exercise-reps-input {
+  .exercise-reps-input,
+  .exercise-duration-input {
     width: 100%;
   }
 
