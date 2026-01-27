@@ -295,7 +295,7 @@ export default {
       }
 
       // 计算休息时间（每组之间休息）
-      const totalRestTime = (restCount - this.exercises.length) * this.restTime
+      const totalRestTime = (restCount - 1) * this.restTime
 
       // 总时长 = 训练时间 + 休息时间
       // 不再单独计算语音播报时间，因为语音播报时间已经包含在训练和休息时间内
@@ -489,48 +489,60 @@ export default {
         clearInterval(this.repTimer)
       }
 
-      // 根据动作类型设置不同的间隔
-      // 对于次数型动作，使用设定的每次用时作为间隔
-      // 对于时间型动作，使用1秒作为间隔
-      const interval = this.currentExercise.type === "time" ? 1000 : this.currentExercise.durationPerRep * 1000
+      // 检查当前动作是否为时间型
+      if (this.currentExercise.type === "time") {
+        // 时间型动作：倒计时逻辑
+        this.currentRep = this.currentExerciseReps // 初始化当前时间为设定的总秒数
 
-      // 初始化当前次数
-      this.currentRep = 1
+        // 立即播报开始
+        this.speak(`开始计时 ${this.currentRep} 秒`)
 
-      // 立即执行第一次动作
-      this.speak(`${this.currentRep}`)
-      this.currentRep++
+        // 记录开始时间，用于精确计算
+        const startTime = Date.now()
 
-      // 使用setTimeout递归调用，确保每个动作的间隔准确
-      const executeNextRep = () => {
-        this.repTimer = setTimeout(() => {
-          // 执行当前次数的动作
-          this.speak(`${this.currentRep}`)
-          this.currentRep++
+        // 倒计时定时器
+        this.repTimer = setInterval(() => {
+          // 精确计算剩余时间
+          const elapsed = Math.floor((Date.now() - startTime) / 1000)
+          this.currentRep = Math.max(0, this.currentExerciseReps - elapsed)
 
-          // 检查当前组是否完成
-          if (this.currentRep > this.currentExerciseReps) {
+          // 只播报关键时间点
+          if (this.currentRep > 0 && (this.currentRep <= 5 || this.currentRep % 10 === 0)) {
+            this.speak(`${this.currentRep}`)
+          }
+
+          // 检查是否结束
+          if (this.currentRep <= 0) {
+            clearInterval(this.repTimer)
             this.repTimer = null
             this.nextSet()
-          } else {
-            // 继续执行下一次动作
-            executeNextRep()
           }
-        }, interval)
-      }
+        }, 1000)
+      } else {
+        // 次数型动作：保持原有逻辑
+        const interval = this.currentExercise.durationPerRep * 1000
+        this.currentRep = 1
 
-      // 开始执行后续动作
-      executeNextRep()
-    },
+        // 立即执行第一次动作
+        this.speak(`${this.currentRep}`)
+        this.currentRep++
 
-    // 下一次动作
-    nextRep() {
-      // 直接执行当前次数的动作
-      this.speak(`${this.currentRep}`)
-      this.currentRep++
+        // 使用setTimeout递归调用
+        const executeNextRep = () => {
+          this.repTimer = setTimeout(() => {
+            this.speak(`${this.currentRep}`)
+            this.currentRep++
 
-      if (this.currentRep > this.currentExerciseReps) {
-        this.nextSet()
+            if (this.currentRep > this.currentExerciseReps) {
+              this.repTimer = null
+              this.nextSet()
+            } else {
+              executeNextRep()
+            }
+          }, interval)
+        }
+
+        executeNextRep()
       }
     },
 
@@ -607,12 +619,6 @@ export default {
 
       // 动作间休息
       this.startRest()
-    },
-
-    // 下一个动作
-    nextExercise() {
-      // 这个方法现在不再被直接调用，逻辑已合并到 nextSet 中
-      this.finishTraining()
     },
 
     // 开始休息
