@@ -740,8 +740,9 @@ export default {
 }
 
 .tool-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  position: relative;
+  justify-content: center;
   gap: 30px;
   height: calc(100% - 60px);
 }
@@ -753,6 +754,7 @@ export default {
   border-radius: var(--border-radius);
   padding: 20px;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 20px;
   overflow-y: auto;
@@ -765,8 +767,12 @@ export default {
   border-radius: var(--border-radius);
   padding: 20px;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 20px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
 }
 
 /* 选项组 */
