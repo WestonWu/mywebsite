@@ -655,7 +655,7 @@ export default {
           // 休息结束，开始下一个动作
           this.currentStatus = "training"
           // 延迟启动动作次数定时器，确保语音播报完成后开始
-          this.speak("准备开始", () => {
+          this.speak(`${this.currentExercise.name}准备开始`, () => {
             // 语音播报完成后，开始下一个动作的计时
             this.currentRep = 1
             this.startRepTimer()
